@@ -9,7 +9,7 @@ function slugify(text) {
     .substring(0, 80);
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
   const siteUrl = 'https://bd-viral-hub.vercel.app';
 
@@ -46,6 +46,6 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 's-maxage=3600');
     res.status(200).send(sitemap);
   } catch(e) {
-    res.status(500).send('Error generating sitemap');
+    res.status(500).send('Error: ' + e.message);
   }
-}
+};
