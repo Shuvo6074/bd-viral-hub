@@ -1,7 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/video/:slug", "destination": "/video.html" },
-    { "source": "/search", "destination": "/index.html" }
-  ]
-}
