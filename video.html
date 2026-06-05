@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <!-- SEO meta tags will be injected by JS -->
   <title>Loading... | BD Viral Hub</title>
   <meta name="robots" content="index, follow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +34,6 @@
     .action-btn:hover { border-color:var(--accent); color:var(--accent); }
     .action-btn.like-btn.liked { background:var(--accent); border-color:var(--accent); color:#fff; }
     .video-description { color:#ccc; font-size:0.9rem; line-height:1.7; margin-bottom:1rem; padding:0.75rem 1rem; background:var(--surface2); border-radius:var(--radius); border-left:3px solid var(--accent); }
-    .ad-player-wrap { width:100%; overflow:hidden; display:flex; justify-content:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:6px 0; margin:0.75rem 0; }
     .related-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; margin-bottom:1rem; letter-spacing:1px; }
     .related-list { display:grid; grid-template-columns:repeat(2,1fr); gap:2px; }
     @media(min-width:600px) { .related-list { grid-template-columns:repeat(3,1fr); } }
@@ -51,7 +49,6 @@
     .loading { text-align:center; padding:60px; color:var(--muted); }
     .spinner { width:36px; height:36px; margin:0 auto 1rem; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    /* Video schema breadcrumb */
     .breadcrumb { font-size:0.8rem; color:var(--muted); margin-bottom:1rem; }
     .breadcrumb a { color:var(--muted); text-decoration:none; }
     .breadcrumb a:hover { color:var(--accent); }
@@ -106,7 +103,6 @@ function getEmbedUrl(url) {
   return url;
 }
 
-// Get current slug from URL
 const pathParts = window.location.pathname.split('/');
 const currentSlug = pathParts[pathParts.length - 1];
 
@@ -128,18 +124,15 @@ async function loadPage() {
       slug:      slugify(row.c[0]?.v || 'video') + '-' + i
     })).filter(v => v.title !== 'Title').reverse();
 
-    // Find video by slug
     const video = allVideos.find(v => v.slug === currentSlug);
     if (!video) {
       document.getElementById('player-wrap').innerHTML = '<div class="loading"><p>❌ ভিডিও পাওয়া যায়নি। <a href="/" style="color:var(--accent)">হোমে ফিরুন</a></p></div>';
       return;
     }
 
-    // Update views
     views[video.id] = (views[video.id] || 0) + 1;
     localStorage.setItem('vhub_views', JSON.stringify(views));
 
-    // === SEO: Update title, meta, canonical ===
     const siteUrl = 'https://bd-viral-hub.vercel.app';
     const pageUrl = `${siteUrl}/video/${video.slug}`;
     document.title = `${video.title} | BD Viral Hub`;
@@ -153,7 +146,6 @@ async function loadPage() {
     setOG('og:image', video.thumbnail);
     setOG('og:site_name', 'BD Viral Hub');
 
-    // === JSON-LD VideoObject Schema ===
     const schema = {
       "@context": "https://schema.org",
       "@type": "VideoObject",
@@ -170,7 +162,6 @@ async function loadPage() {
     schemaScript.textContent = JSON.stringify(schema);
     document.head.appendChild(schemaScript);
 
-    // === Breadcrumb Schema ===
     const bcSchema = {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -185,19 +176,11 @@ async function loadPage() {
     bcScript.textContent = JSON.stringify(bcSchema);
     document.head.appendChild(bcScript);
 
-    // === Breadcrumb HTML ===
     document.getElementById('breadcrumb').innerHTML =
       `<a href="/">Home</a> › <a href="/?cat=${video.category}">${video.category}</a> › ${video.title}`;
 
-    // === Popunder ad ===
-    const popS = document.createElement('script');
-    popS.src = 'https://pl29166305.profitablecpmratenetwork.com/f5/78/c6/f578c6c3cd4ee44973971572822ea227.js';
-    document.body.appendChild(popS);
-
-    // === Related videos ===
     const related = allVideos.filter(v => v.id !== video.id && v.category === video.category).slice(0, 12);
 
-    // === Build player HTML ===
     const embedUrl = getEmbedUrl(video.videoUrl);
     const isDirectVideo = /\.(mp4|webm|ogg|mov)/i.test(video.videoUrl) && !video.videoUrl.includes('drive.google.com') && !video.videoUrl.includes('archive.org');
     const playerHTML = isDirectVideo
@@ -236,33 +219,17 @@ async function loadPage() {
           </button>
           <button class="action-btn" onclick="shareVideo()">🔗 Share</button>
         </div>
-        <div class="ad-player-wrap" id="ad1"></div>
         <div id="related-mobile" style="display:none">
-          <div class="ad-player-wrap" id="ad2"></div>
           <div class="related-title">Related Videos</div>
           <div class="related-list">${relatedHTML || '<p style="color:var(--muted)">No related videos</p>'}</div>
         </div>
       </div>
       <div id="related-sidebar">
-        <div class="ad-player-wrap" id="ad3"></div>
         <div class="related-title">Related Videos</div>
         <div class="related-list">${relatedHTML || '<p style="color:var(--muted)">No related videos</p>'}</div>
       </div>
     </div>`;
 
-    // Inject ads
-    ['ad1','ad2','ad3'].forEach(id => {
-      const wrap = document.getElementById(id);
-      if (!wrap) return;
-      const s1 = document.createElement('script');
-      s1.text = "atOptions={'key':'8da5fec516d3902d04773f8f8e2e8c91','format':'iframe','height':90,'width':728,'params':{}};";
-      wrap.appendChild(s1);
-      const s2 = document.createElement('script');
-      s2.src = 'https://www.highperformanceformat.com/8da5fec516d3902d04773f8f8e2e8c91/invoke.js';
-      wrap.appendChild(s2);
-    });
-
-    // Mobile / desktop related
     if (window.innerWidth < 768) {
       document.getElementById('related-mobile').style.display = 'block';
       document.getElementById('related-sidebar').style.display = 'none';
