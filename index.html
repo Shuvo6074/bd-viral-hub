@@ -2,7 +2,6 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="monetag" content="299a79fa8b3b822b41fcf927066bd4e9">
   <script>
     if (location.pathname === '/index.html') {
       location.replace('/');
@@ -93,7 +92,7 @@
     .loading { text-align:center; padding:60px; color:var(--muted); }
     .spinner { width:36px; height:36px; margin:0 auto 1rem; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
-    .ad-banner-wrap { grid-column:1/-1; width:100%; overflow:hidden; display:flex; justify-content:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:6px 0; margin:2px 0; }
+
     .empty { text-align:center; padding:60px; color:var(--muted); }
     footer { background:#111; border-top:1px solid #222; padding:2rem 4%; margin-top:2rem; }
     footer .footer-inner { max-width:1400px; margin:0 auto; }
@@ -130,10 +129,7 @@
     <div class="loading"><div class="spinner"></div><p>Loading videos...</p></div>
   </div>
   <div class="pagination" id="pagination"></div>
-  <div style="width:100%;margin:1rem 0;overflow:hidden;">
-    <script async="async" data-cfasync="false" src="https://pl29345952.profitablecpmratenetwork.com/14dc91c50e8e2b41d2853fc6b679e9e0/invoke.js"></script>
-    <div id="container-14dc91c50e8e2b41d2853fc6b679e9e0"></div>
-  </div>
+
 </div>
 
 <footer>
@@ -208,7 +204,7 @@ async function loadVideos() {
       date:      row.c[4]?.v || '',
       duration:  row.c[5]?.v || '',
       description: row.c[6]?.v || '',
-      slug:      slugify(row.c[0]?.v || 'video') + '-' + i
+      slug:      slugify(row.c[0]?.v || 'video')
     })).filter(v => v.title !== 'Title').reverse();
     buildCatTabs();
     filtered = [...allVideos];
@@ -254,13 +250,7 @@ function renderGrid() {
   const page = filtered.slice(start, start + PER_PAGE);
   if (!page.length) { grid.innerHTML = '<div class="empty">🎬 No videos found.</div>'; document.getElementById('pagination').innerHTML = ''; return; }
   let gridHTML = '';
-  const adSlots = [];
   page.forEach((v, i) => {
-    if (i > 0 && i % 5 === 0) {
-      const uid = 'grid-ad-' + adSlots.length;
-      adSlots.push(uid);
-      gridHTML += `<div class="ad-banner-wrap" id="${uid}"></div>`;
-    }
     const imgLoad = i < 6 ? 'eager' : 'lazy';
     gridHTML += `
     <a class="video-card" href="/video/${v.slug}" onclick="return openVideo(event, ${v.id})">
@@ -283,17 +273,6 @@ function renderGrid() {
         </div>
       </div>
     </a>`;
-  });
-  grid.innerHTML = gridHTML;
-  adSlots.forEach(uid => {
-    const wrap = document.getElementById(uid);
-    if (!wrap) return;
-    const s1 = document.createElement('script');
-    s1.text = "atOptions={'key':'8da5fec516d3902d04773f8f8e2e8c91','format':'iframe','height':90,'width':728,'params':{}};";
-    wrap.appendChild(s1);
-    const s2 = document.createElement('script');
-    s2.src = 'https://www.highperformanceformat.com/8da5fec516d3902d04773f8f8e2e8c91/invoke.js';
-    wrap.appendChild(s2);
   });
   renderPagination();
 }
