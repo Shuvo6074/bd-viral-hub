@@ -121,7 +121,7 @@ async function loadPage() {
       date:      row.c[4]?.v || '',
       duration:  row.c[5]?.v || '',
       description: row.c[6]?.v || '',
-      slug:      slugify(row.c[0]?.v || 'video') + '-' + i
+      slug:      slugify(row.c[0]?.v || 'video')
     })).filter(v => v.title !== 'Title').reverse();
 
     const video = allVideos.find(v => v.slug === currentSlug);
