@@ -11,12 +11,11 @@ function slugify(text) {
 
 let cachedSitemap = null;
 let cacheTime = 0;
-const CACHE_TTL = 3600000; // 1 hour
+const CACHE_TTL = 3600000;
 
 module.exports = async function handler(req, res) {
   const siteUrl = 'https://bd-viral-hub.vercel.app';
 
-  // Return cached version if available
   if (cachedSitemap && Date.now() - cacheTime < CACHE_TTL) {
     res.setHeader('Content-Type', 'application/xml');
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
@@ -35,10 +34,10 @@ module.exports = async function handler(req, res) {
     const json = JSON.parse(text.substring(47, text.length - 2));
     const rows = json.table.rows;
 
-    const videos = rows.map((row, i) => ({
+    const videos = rows.map((row) => ({
       title: row.c[0]?.v || 'video',
       date: row.c[4]?.v || '',
-      slug: slugify(row.c[0]?.v || 'video') + '-' + i
+      slug: slugify(row.c[0]?.v || 'video')
     })).filter(v => v.title !== 'Title');
 
     const urls = videos.map(v => `
@@ -66,7 +65,6 @@ module.exports = async function handler(req, res) {
     res.status(200).send(sitemap);
 
   } catch(e) {
-    // If fetch fails, return cached version if available
     if (cachedSitemap) {
       res.setHeader('Content-Type', 'application/xml');
       return res.status(200).send(cachedSitemap);
