@@ -29,7 +29,6 @@ export default async function handler(req) {
   const pathParts = url.pathname.split('/');
   const currentSlug = pathParts[pathParts.length - 1];
 
-  // Only handle /video/* routes
   if (!currentSlug || pathParts[1] !== 'video') {
     return new Response('Not found', { status: 404 });
   }
@@ -37,15 +36,17 @@ export default async function handler(req) {
   const ua = req.headers.get('user-agent') || '';
   const isBot = /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|telegrambot/i.test(ua);
 
-  // For real users, just serve the normal video.html (Vercel rewrite handles this)
-  // For bots, serve pre-rendered HTML
+  // Real users: serve the full video.html with JS (slug stays in browser URL)
   if (!isBot) {
-    return new Response(null, {
-      status: 302,
-      headers: { Location: '/video.html' }
+    const videoHtmlRes = await fetch(new URL('/video.html', url.origin));
+    const html = await videoHtmlRes.text();
+    return new Response(html, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
     });
   }
 
+  // Bots: serve pre-rendered HTML from Sheet
   try {
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
     const res = await fetch(sheetUrl);
@@ -163,15 +164,6 @@ export default async function handler(req) {
   ${video.description ? `<div class="description">${video.description}</div>` : ''}
   ${related.length ? `<div class="related-title">Related Videos</div><div>${relatedHTML}</div>` : ''}
 </div>
-<script>
-  // Redirect real users to the full JS version after bot gets static HTML
-  const ua = navigator.userAgent.toLowerCase();
-  const isBot = /googlebot|bingbot/.test(ua);
-  if (!isBot) {
-    // Already on correct page, load full JS version
-    window.location.href = window.location.href;
-  }
-</script>
 </body>
 </html>`;
 
