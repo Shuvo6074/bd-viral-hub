@@ -1,7 +1,6 @@
-bd-viral-hub/
-├── api/
-│   └── sitemap.js        ← এখানে আছে
-├── index.html
-├── video.html
-├── vercel.json           ← এখানে আছে
-└── README.md
+{
+  "rewrites": [
+    { "source": "/video/:slug", "destination": "/api/video" },
+    { "source": "/search", "destination": "/index.html" }
+  ]
+}
