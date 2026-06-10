@@ -143,8 +143,9 @@ export default function Home() {
           .main{max-width:1400px;margin:0 auto;padding:0.5rem 0;}
           .section-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;margin-bottom:1rem;padding:0.5rem 1%;color:var(--text);display:flex;align-items:center;gap:0.5rem;}
           .section-title::before{content:'';display:block;width:4px;height:1.2rem;background:var(--accent);border-radius:2px;}
-          .video-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;}
-          @media(min-width:600px){.video-grid{grid-template-columns:repeat(3,1fr);}}
+          .video-grid{display:grid;grid-template-columns:1fr;gap:2px;}
+          @media(min-width:480px){.video-grid{grid-template-columns:repeat(2,1fr);}}
+          @media(min-width:768px){.video-grid{grid-template-columns:repeat(3,1fr);}}
           @media(min-width:1024px){.video-grid{grid-template-columns:repeat(4,1fr);gap:3px;}}
           @media(min-width:1400px){.video-grid{grid-template-columns:repeat(5,1fr);}}
           .video-card{background:var(--surface);overflow:hidden;cursor:pointer;transition:box-shadow 0.2s;border-bottom:1px solid var(--border);text-decoration:none;display:block;color:inherit;}
@@ -179,7 +180,6 @@ export default function Home() {
           footer .footer-bottom{border-top:1px solid #222;padding-top:1rem;text-align:center;color:#555;font-size:0.78rem;}
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:200px;}}
-          @media(max-width:500px){.video-grid{grid-template-columns:1fr;}}
         `}</style>
       </Head>
 
