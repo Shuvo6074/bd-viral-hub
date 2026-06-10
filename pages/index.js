@@ -98,6 +98,7 @@ export default function Home() {
         <meta name="googlebot" content="index, follow" />
         <meta name="google-site-verification" content="uw9PPcSk-0iQ5QykqhGYmfYWjIcsOoIW-am1KsstBnQ" />
         <meta name="google-site-verification" content="NAhrexeitv2hKbCbtefH1LpUOR6kogUYUr5wDAZiyr8" />
+        <meta name="msvalidate.01" content="86580AA48D4BA42EFA60D7A9803A6C5A" />
         <link rel="canonical" href="https://bd-viral-hub.vercel.app/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="BD Viral Hub | বাংলাদেশের সেরা ভাইরাল ভিডিও ২০২৬" />
