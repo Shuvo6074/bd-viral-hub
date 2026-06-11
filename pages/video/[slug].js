@@ -141,6 +141,8 @@ export default function VideoPage({ video, related }) {
         <title>{video.title} | BD Viral Hub</title>
         <meta name="description" content={(video.description || video.title) + ' - BD Viral Hub ভাইরাল ভিডিও বাংলাদেশ ২০২৬'} />
         <meta name="robots" content="index, follow" />
+        <meta name="rating" content="adult" />
+        <meta name="rating" content="RTA-5042-1996-1400-1577-RTA" />
         <link rel="canonical" href={pageUrl} />
         <meta property="og:title" content={video.title + ' | BD Viral Hub'} />
         <meta property="og:description" content={video.description || video.title} />
@@ -304,4 +306,4 @@ export default function VideoPage({ video, related }) {
       </div>
     </>
   );
-}
+  }
