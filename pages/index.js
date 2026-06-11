@@ -96,6 +96,8 @@ export default function Home() {
         <meta name="description" content="BD Viral Hub - বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট। আজকের নতুন ভাইরাল ভিডিও লিংক, TikTok ভাইরাল ক্লিপ, Facebook Reels ভাইরাল, ফানি ভিডিও বিনামূল্যে দেখুন।" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         <meta name="googlebot" content="index, follow" />
+        <meta name="rating" content="adult" />
+        <meta name="rating" content="RTA-5042-1996-1400-1577-RTA" />
         <meta name="google-site-verification" content="uw9PPcSk-0iQ5QykqhGYmfYWjIcsOoIW-am1KsstBnQ" />
         <meta name="google-site-verification" content="NAhrexeitv2hKbCbtefH1LpUOR6kogUYUr5wDAZiyr8" />
         <meta name="msvalidate.01" content="86580AA48D4BA42EFA60D7A9803A6C5A" />
