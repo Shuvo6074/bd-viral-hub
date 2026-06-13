@@ -304,4 +304,4 @@ export default function VideoPage({ video, related }) {
       </div>
     </>
   );
-  }
+}
