@@ -154,6 +154,7 @@ export default function VideoPage({ video, related }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <script src="https://pl29731380.effectivecpmnetwork.com/e1/1a/dd/e11add4186ad924a2c35518025bbb7c2.js" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
         {/* MyAdCash Library */}
@@ -303,6 +304,19 @@ export default function VideoPage({ video, related }) {
             </div>
           </div>
         </div>
+
+        {/* Native Banner Ad 1 */}
+        <div style={{margin:'1rem 0'}}>
+          <script async={true} data-cfasync="false" src="https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js"></script>
+          <div id="container-e3988ef0a3824ff9822566414d9bbdff"></div>
+        </div>
+
+        {/* Native Banner Ad 2 */}
+        <div style={{margin:'1rem 0'}}>
+          <script async={true} data-cfasync="false" src="https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js"></script>
+          <div id="container-e3988ef0a3824ff9822566414d9bbdff-2"></div>
+        </div>
+
       </div>
     </>
   );
