@@ -38,18 +38,6 @@ export default function Home() {
     loadVideos();
   }, []);
 
-  useEffect(() => {
-    const container = document.getElementById('banner-ad-hpf');
-    if (!container || container.dataset.loaded) return;
-    container.dataset.loaded = '1';
-    const s1 = document.createElement('script');
-    s1.text = `atOptions={'key':'3747acdf43dd1e99fd504f2221d54381','format':'iframe','height':300,'width':160,'params':{}};`;
-    const s2 = document.createElement('script');
-    s2.src = `https://www.highperformanceformat.com/3747acdf43dd1e99fd504f2221d54381/invoke.js`;
-    container.appendChild(s1);
-    container.appendChild(s2);
-  }, []);
-
   async function loadVideos() {
     try {
       const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
@@ -126,8 +114,9 @@ export default function Home() {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{ __html: `var _adClick=0;document.addEventListener('click',function(){_adClick++;if(_adClick%2===1){window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');}});`}} />
-        {/* Social Bar Ad */}
         <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" />
+        <script dangerouslySetInnerHTML={{ __html: `atOptions={'key':'dcb6dc6458f50bc40d2e11ea36f425a3','format':'iframe','height':60,'width':468,'params':{}};` }} />
+        <script src="https://www.highperformanceformat.com/dcb6dc6458f50bc40d2e11ea36f425a3/invoke.js" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -199,12 +188,14 @@ export default function Home() {
           footer .footer-bottom{border-top:1px solid #222;padding-top:1rem;text-align:center;color:#555;font-size:0.78rem;}
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:100%;}}
-          /* Force In-Page Push Ad to bottom */
-          div[style*="position: fixed"], div[style*="position:fixed"]{
+          #adbox-dcb6dc6458f50bc40d2e11ea36f425a3,
+          iframe[src*="dcb6dc6458f50bc40d2e11ea36f425a3"]{
+            position:fixed !important;
+            bottom:0 !important;
             top:auto !important;
-            bottom:70px !important;
             left:50% !important;
             transform:translateX(-50%) !important;
+            z-index:9999 !important;
           }
         `}</style>
       </Head>
@@ -273,11 +264,6 @@ export default function Home() {
             ))}
           </div>
         )}
-
-        {/* Banner Ad */}
-        <div style={{display:'flex',justifyContent:'center',margin:'1.5rem 0'}}>
-          <div id="banner-ad-hpf"></div>
-        </div>
 
         {totalPages > 1 && (
           <div className="pagination">
