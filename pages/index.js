@@ -114,6 +114,7 @@ export default function Home() {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{ __html: `var _adClick=0;document.addEventListener('click',function(){_adClick++;if(_adClick%2===1){window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');}});`}} />
+        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
@@ -185,6 +186,16 @@ export default function Home() {
           footer .footer-bottom{border-top:1px solid #222;padding-top:1rem;text-align:center;color:#555;font-size:0.78rem;}
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:100%;}}
+          body{padding-bottom:55px;}
+          #adbox-5c5fa829d1b2adb187a491231ec4716f,
+          div[id*="5c5fa829d1b2adb187a491231ec4716f"]{
+            position:fixed !important;
+            bottom:0 !important;
+            top:auto !important;
+            left:0 !important;
+            width:100% !important;
+            z-index:9999 !important;
+          }
         `}</style>
       </Head>
 
