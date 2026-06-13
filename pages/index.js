@@ -114,7 +114,6 @@ export default function Home() {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{ __html: `var _adClick=0;document.addEventListener('click',function(){_adClick++;if(_adClick%2===1){window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');}});`}} />
-        <script dangerouslySetInnerHTML={{ __html: `atOptions={'key':'dcb6dc6458f50bc40d2e11ea36f425a3','format':'iframe','height':60,'width':468,'params':{}};(function(){var s=document.createElement('script');s.src='https://www.highperformanceformat.com/dcb6dc6458f50bc40d2e11ea36f425a3/invoke.js';document.head.appendChild(s);})();` }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
