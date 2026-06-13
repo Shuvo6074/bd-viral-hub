@@ -151,6 +151,7 @@ export default function VideoPage({ video, related }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{ __html: `var _adClick=0;document.addEventListener('click',function(){_adClick++;if(_adClick%2===1){window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');}});`}} />
+        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
         {/* MyAdCash Library */}
@@ -223,6 +224,15 @@ export default function VideoPage({ video, related }) {
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', background: '#000' }}
                 />
               )}
+              {/* One-time smartlink overlay */}
+              <div
+                id="player-overlay"
+                onClick={() => {
+                  window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');
+                  document.getElementById('player-overlay').style.display = 'none';
+                }}
+                style={{ position:'absolute', inset:0, zIndex:10, cursor:'pointer', background:'transparent' }}
+              />
             </div>
 
             {/* MyAdCash Video Slider Ad */}
@@ -304,4 +314,4 @@ export default function VideoPage({ video, related }) {
       </div>
     </>
   );
-}
+  }
