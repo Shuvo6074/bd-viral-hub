@@ -80,11 +80,7 @@ export default function VideoPage({ video, related }) {
       setViews({ ...v });
     } catch(e) {}
 
-    // MyAdCash Interstitial - 5 সেকেন্ড পর fullscreen ad
     const interstitialTimer = setTimeout(() => {
-      if (typeof window !== 'undefined' && window.aclib) {
-        window.aclib.runInterstitial({ zoneId: '11416094' });
-      }
     }, 5000);
 
     return () => clearTimeout(interstitialTimer);
@@ -158,7 +154,6 @@ export default function VideoPage({ video, related }) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
         {/* MyAdCash Library */}
-        <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js" />
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -231,17 +226,6 @@ export default function VideoPage({ video, related }) {
             </div>
 
             {/* MyAdCash Video Slider Ad */}
-            <div id="aclib-video-slider" style={{ margin: '0.5rem 0' }}>
-              <script type="text/javascript" dangerouslySetInnerHTML={{ __html: `
-                if(typeof aclib !== 'undefined') {
-                  aclib.runVideoSlider({ zoneId: '11416102' });
-                } else {
-                  window.addEventListener('load', function() {
-                    if(typeof aclib !== 'undefined') aclib.runVideoSlider({ zoneId: '11416102' });
-                  });
-                }
-              `}} />
-            </div>
 
             <h1 className="video-title-big">{video.title}</h1>
 
