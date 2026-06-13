@@ -39,22 +39,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const ads = [
-      { key: '3747acdf43dd1e99fd504f2221d54381', width: 160, height: 300 },
-      { key: 'dcb6dc6458f50bc40d2e11ea36f425a3', width: 468, height: 60 },
-      { key: 'c36e0fbc3c9f195056abac6a21b4c0de', width: 160, height: 600 },
-    ];
-    ads.forEach(ad => {
-      const container = document.getElementById('banner-ad-' + ad.key);
-      if (!container || container.dataset.loaded) return;
-      container.dataset.loaded = '1';
-      const s1 = document.createElement('script');
-      s1.text = `atOptions={'key':'${ad.key}','format':'iframe','height':${ad.height},'width':${ad.width},'params':{}};`;
-      const s2 = document.createElement('script');
-      s2.src = `https://www.highperformanceformat.com/${ad.key}/invoke.js`;
-      container.appendChild(s1);
-      container.appendChild(s2);
-    });
+    const container = document.getElementById('banner-ad-hpf');
+    if (!container || container.dataset.loaded) return;
+    container.dataset.loaded = '1';
+    const s1 = document.createElement('script');
+    s1.text = `atOptions={'key':'3747acdf43dd1e99fd504f2221d54381','format':'iframe','height':300,'width':160,'params':{}};`;
+    const s2 = document.createElement('script');
+    s2.src = `https://www.highperformanceformat.com/3747acdf43dd1e99fd504f2221d54381/invoke.js`;
+    container.appendChild(s1);
+    container.appendChild(s2);
   }, []);
 
   async function loadVideos() {
@@ -206,6 +199,13 @@ export default function Home() {
           footer .footer-bottom{border-top:1px solid #222;padding-top:1rem;text-align:center;color:#555;font-size:0.78rem;}
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:100%;}}
+          /* Force In-Page Push Ad to bottom */
+          div[style*="position: fixed"], div[style*="position:fixed"]{
+            top:auto !important;
+            bottom:70px !important;
+            left:50% !important;
+            transform:translateX(-50%) !important;
+          }
         `}</style>
       </Head>
 
@@ -274,11 +274,9 @@ export default function Home() {
           </div>
         )}
 
-        {/* Banner Ads - ভিডিও গ্রিডের নিচে */}
-        <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',alignItems:'center',gap:'1rem',margin:'1.5rem 0'}}>
-          <div id="banner-ad-3747acdf43dd1e99fd504f2221d54381"></div>
-          <div id="banner-ad-dcb6dc6458f50bc40d2e11ea36f425a3"></div>
-          <div id="banner-ad-c36e0fbc3c9f195056abac6a21b4c0de"></div>
+        {/* Banner Ad */}
+        <div style={{display:'flex',justifyContent:'center',margin:'1.5rem 0'}}>
+          <div id="banner-ad-hpf"></div>
         </div>
 
         {totalPages > 1 && (
