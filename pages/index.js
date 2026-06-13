@@ -186,15 +186,6 @@ export default function Home() {
           footer .footer-bottom{border-top:1px solid #222;padding-top:1rem;text-align:center;color:#555;font-size:0.78rem;}
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:100%;}}
-          iframe[src*="dcb6dc6458f50bc40d2e11ea36f425a3"],
-          div[id*="dcb6dc6458f50bc40d2e11ea36f425a3"]{
-            position:fixed !important;
-            bottom:0 !important;
-            top:auto !important;
-            left:50% !important;
-            transform:translateX(-50%) !important;
-            z-index:9999 !important;
-          }
         `}</style>
       </Head>
 
