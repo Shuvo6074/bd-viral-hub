@@ -253,6 +253,25 @@ export default function Home() {
           </div>
         )}
 
+        {/* Banner Ads - ভিডিও গ্রিডের নিচে */}
+        <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'1rem',margin:'1.5rem 0'}}>
+          {/* Banner 1: 160x300 */}
+          <div dangerouslySetInnerHTML={{ __html: `
+            <script>atOptions={'key':'3747acdf43dd1e99fd504f2221d54381','format':'iframe','height':300,'width':160,'params':{}};<\/script>
+            <script src="https://www.highperformanceformat.com/3747acdf43dd1e99fd504f2221d54381/invoke.js"><\/script>
+          `}} />
+          {/* Banner 2: 468x60 */}
+          <div dangerouslySetInnerHTML={{ __html: `
+            <script>atOptions={'key':'dcb6dc6458f50bc40d2e11ea36f425a3','format':'iframe','height':60,'width':468,'params':{}};<\/script>
+            <script src="https://www.highperformanceformat.com/dcb6dc6458f50bc40d2e11ea36f425a3/invoke.js"><\/script>
+          `}} />
+          {/* Banner 3: 160x600 */}
+          <div dangerouslySetInnerHTML={{ __html: `
+            <script>atOptions={'key':'c36e0fbc3c9f195056abac6a21b4c0de','format':'iframe','height':600,'width':160,'params':{}};<\/script>
+            <script src="https://www.highperformanceformat.com/c36e0fbc3c9f195056abac6a21b4c0de/invoke.js"><\/script>
+          `}} />
+        </div>
+
         {totalPages > 1 && (
           <div className="pagination">
             <button className="page-btn" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>← Prev</button>
