@@ -38,31 +38,45 @@ export default function Home() {
     loadVideos();
   }, []);
 
-  // Inject highperformanceformat.com ad scripts (static injection method)
+  // Inject highperformanceformat.com ad scripts (isolated per-iframe so each
+  // ad unit gets its own atOptions/document.write context)
   useEffect(() => {
     const container = document.getElementById('ad-bottom-container');
     if (!container || container.dataset.loaded) return;
     container.dataset.loaded = 'true';
+
+    function buildAdIframe(key, width, height) {
+      const iframe = document.createElement('iframe');
+      iframe.style.width = width + 'px';
+      iframe.style.height = height + 'px';
+      iframe.style.maxWidth = '100%';
+      iframe.style.border = '0';
+      iframe.style.overflow = 'hidden';
+      iframe.scrolling = 'no';
+
+      const html = `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}</style></head><body>
+<script type="text/javascript">
+atOptions = {
+  'key' : '${key}',
+  'format' : 'iframe',
+  'height' : ${height},
+  'width' : ${width},
+  'params' : {}
+};
+</script>
+<script type="text/javascript" src="https://www.highperformanceformat.com/${key}/invoke.js"></script>
+</body></html>`;
+
+      iframe.srcdoc = html;
+      return iframe;
+    }
 
     // 1) Banner 728x90 - shows first, on top
     const bannerWrap = document.createElement('div');
     bannerWrap.style.display = 'flex';
     bannerWrap.style.justifyContent = 'center';
     bannerWrap.style.margin = '1rem 0';
-    const bannerConf = document.createElement('script');
-    bannerConf.type = 'text/javascript';
-    bannerConf.text = `atOptions = {
-      'key' : '5adf6dca592b0a84d1333f77bd5c167c',
-      'format' : 'iframe',
-      'height' : 90,
-      'width' : 728,
-      'params' : {}
-    };`;
-    const bannerInvoke = document.createElement('script');
-    bannerInvoke.type = 'text/javascript';
-    bannerInvoke.src = 'https://www.highperformanceformat.com/5adf6dca592b0a84d1333f77bd5c167c/invoke.js';
-    bannerWrap.appendChild(bannerConf);
-    bannerWrap.appendChild(bannerInvoke);
+    bannerWrap.appendChild(buildAdIframe('5adf6dca592b0a84d1333f77bd5c167c', 728, 90));
     container.appendChild(bannerWrap);
 
     // 2) 300x250 ad blocks x10 - shown below the banner
@@ -76,23 +90,8 @@ export default function Home() {
     for (let i = 0; i < 10; i++) {
       const cell = document.createElement('div');
       cell.style.width = '300px';
-      cell.style.minHeight = '250px';
-
-      const conf = document.createElement('script');
-      conf.type = 'text/javascript';
-      conf.text = `atOptions = {
-        'key' : '408f7fe8d5566eee24a05d83101d2638',
-        'format' : 'iframe',
-        'height' : 250,
-        'width' : 300,
-        'params' : {}
-      };`;
-      const invoke = document.createElement('script');
-      invoke.type = 'text/javascript';
-      invoke.src = 'https://www.highperformanceformat.com/408f7fe8d5566eee24a05d83101d2638/invoke.js';
-
-      cell.appendChild(conf);
-      cell.appendChild(invoke);
+      cell.style.height = '250px';
+      cell.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
       gridWrap.appendChild(cell);
     }
 
