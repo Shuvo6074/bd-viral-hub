@@ -208,9 +208,13 @@ atOptions = {
           .video-title-big{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.5px;margin-bottom:0.75rem;line-height:1.2;}
           .video-stats-row{display:flex;gap:1.5rem;color:var(--muted);font-size:0.82rem;margin-bottom:1rem;flex-wrap:wrap;}
           .video-actions{display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
-          .action-btn{display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1.1rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:600;transition:all 0.2s;text-decoration:none;}
-          .action-btn:hover{border-color:var(--accent);color:var(--accent);}
+          .action-btn{display:flex;align-items:center;gap:0.4rem;padding:0.55rem 1.3rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:600;transition:all 0.2s;text-decoration:none;}
+          .action-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
           .action-btn.liked{background:var(--accent);border-color:var(--accent);color:#fff;}
+          .download-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);border-color:#1d4ed8;color:#fff;}
+          .download-btn:hover{background:linear-gradient(135deg,#3b82f6,#2563eb);border-color:#3b82f6;color:#fff;transform:translateY(-1px);}
+          .share-btn{background:linear-gradient(135deg,#16a34a,#15803d);border-color:#15803d;color:#fff;}
+          .share-btn:hover{background:linear-gradient(135deg,#22c55e,#16a34a);border-color:#22c55e;color:#fff;transform:translateY(-1px);}
           .video-description{color:#ccc;font-size:0.9rem;line-height:1.7;margin-bottom:1rem;padding:0.75rem 1rem;background:var(--surface2);border-radius:var(--radius);border-left:3px solid var(--accent);}
           .related-section-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;margin-bottom:1rem;letter-spacing:1px;}
           .related-list{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;}
@@ -279,11 +283,11 @@ atOptions = {
             )}
 
             <div className="video-actions">
-              <a className="action-btn" href={video.videoUrl} download target="_blank" rel="noopener noreferrer">⬇️ Download</a>
+              <button className="action-btn download-btn" onClick={e => e.preventDefault()}>⬇️ Download</button>
               <button className={`action-btn${liked ? ' liked' : ''}`} onClick={toggleLike}>
                 ❤️ {formatNum(likes[video.id] || 0)} Like
               </button>
-              <button className="action-btn" onClick={shareVideo}>🔗 Share</button>
+              <button className="action-btn share-btn" onClick={shareVideo}>🔗 Share</button>
             </div>
 
             {/* Mobile related */}
