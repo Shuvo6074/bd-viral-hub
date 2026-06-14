@@ -38,6 +38,67 @@ export default function Home() {
     loadVideos();
   }, []);
 
+  // Inject highperformanceformat.com ad scripts (static injection method)
+  useEffect(() => {
+    const container = document.getElementById('ad-bottom-container');
+    if (!container || container.dataset.loaded) return;
+    container.dataset.loaded = 'true';
+
+    // 1) Banner 728x90 - shows first, on top
+    const bannerWrap = document.createElement('div');
+    bannerWrap.style.display = 'flex';
+    bannerWrap.style.justifyContent = 'center';
+    bannerWrap.style.margin = '1rem 0';
+    const bannerConf = document.createElement('script');
+    bannerConf.type = 'text/javascript';
+    bannerConf.text = `atOptions = {
+      'key' : '5adf6dca592b0a84d1333f77bd5c167c',
+      'format' : 'iframe',
+      'height' : 90,
+      'width' : 728,
+      'params' : {}
+    };`;
+    const bannerInvoke = document.createElement('script');
+    bannerInvoke.type = 'text/javascript';
+    bannerInvoke.src = 'https://www.highperformanceformat.com/5adf6dca592b0a84d1333f77bd5c167c/invoke.js';
+    bannerWrap.appendChild(bannerConf);
+    bannerWrap.appendChild(bannerInvoke);
+    container.appendChild(bannerWrap);
+
+    // 2) 300x250 ad blocks x10 - shown below the banner
+    const gridWrap = document.createElement('div');
+    gridWrap.style.display = 'flex';
+    gridWrap.style.flexWrap = 'wrap';
+    gridWrap.style.justifyContent = 'center';
+    gridWrap.style.gap = '1rem';
+    gridWrap.style.margin = '1rem 0';
+
+    for (let i = 0; i < 10; i++) {
+      const cell = document.createElement('div');
+      cell.style.width = '300px';
+      cell.style.minHeight = '250px';
+
+      const conf = document.createElement('script');
+      conf.type = 'text/javascript';
+      conf.text = `atOptions = {
+        'key' : '408f7fe8d5566eee24a05d83101d2638',
+        'format' : 'iframe',
+        'height' : 250,
+        'width' : 300,
+        'params' : {}
+      };`;
+      const invoke = document.createElement('script');
+      invoke.type = 'text/javascript';
+      invoke.src = 'https://www.highperformanceformat.com/408f7fe8d5566eee24a05d83101d2638/invoke.js';
+
+      cell.appendChild(conf);
+      cell.appendChild(invoke);
+      gridWrap.appendChild(cell);
+    }
+
+    container.appendChild(gridWrap);
+  }, [loading]);
+
   async function loadVideos() {
     try {
       const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
@@ -278,6 +339,9 @@ export default function Home() {
             <button className="page-btn" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>Next →</button>
           </div>
         )}
+
+        {/* Ad slots: 728x90 banner first, then 10x 300x250 ad blocks */}
+        <div id="ad-bottom-container"></div>
       </div>
 
       <footer>
