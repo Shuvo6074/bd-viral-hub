@@ -67,6 +67,20 @@ export default function VideoPage({ video, related }) {
   const [likes, setLikes] = useState({});
   const [views, setViews] = useState({});
   const [liked, setLiked] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
+
+  const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
+
+  function handleOverlayClick() {
+    window.open(SMARTLINK_URL, '_blank');
+    setShowOverlay(false);
+  }
+
+  function handleRelatedClick(e, slug) {
+    e.preventDefault();
+    window.open(SMARTLINK_URL, '_blank');
+    setTimeout(() => { window.location.href = `/video/${slug}`; }, 50);
+  }
 
   useEffect(() => {
     try {
@@ -205,6 +219,7 @@ atOptions = {
           @media(max-width:768px){.player-layout{grid-template-columns:1fr;}.related-sidebar{display:none !important;}.related-mobile{display:block !important;}}
           .video-container{position:relative;padding-top:56.25%;background:#000;border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;}
           .video-container video,.video-container iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
+          .video-overlay{position:absolute;inset:0;width:100%;height:100%;background:transparent;cursor:pointer;z-index:10;}
           .video-title-big{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.5px;margin-bottom:0.75rem;line-height:1.2;}
           .video-stats-row{display:flex;gap:1.5rem;color:var(--muted);font-size:0.82rem;margin-bottom:1rem;flex-wrap:wrap;}
           .video-actions{display:flex;gap:0.6rem;flex-wrap:nowrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);overflow-x:auto;}
@@ -265,6 +280,9 @@ atOptions = {
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', background: '#000' }}
                 />
               )}
+              {showOverlay && (
+                <div className="video-overlay" onClick={handleOverlayClick}></div>
+              )}
             </div>
 
             {/* MyAdCash Video Slider Ad */}
@@ -299,7 +317,7 @@ atOptions = {
                 {related.length === 0 ? (
                   <p style={{ color: 'var(--muted)' }}>No related videos</p>
                 ) : related.map(v => (
-                  <a key={v.id} className="related-card" href={`/video/${v.slug}`}>
+                  <a key={v.id} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                     <div className="related-thumb">
                       <img src={v.thumbnail} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
                     </div>
@@ -322,7 +340,7 @@ atOptions = {
               {related.length === 0 ? (
                 <p style={{ color: 'var(--muted)' }}>No related videos</p>
               ) : related.map(v => (
-                <a key={v.id} className="related-card" href={`/video/${v.slug}`}>
+                <a key={v.id} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                   <div className="related-thumb">
                     <img src={v.thumbnail} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
                   </div>
