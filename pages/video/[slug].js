@@ -207,14 +207,14 @@ atOptions = {
           .video-container video,.video-container iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
           .video-title-big{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.5px;margin-bottom:0.75rem;line-height:1.2;}
           .video-stats-row{display:flex;gap:1.5rem;color:var(--muted);font-size:0.82rem;margin-bottom:1rem;flex-wrap:wrap;}
-          .video-actions{display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
-          .action-btn{display:flex;align-items:center;gap:0.4rem;padding:0.55rem 1.3rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.85rem;font-weight:600;transition:all 0.2s;text-decoration:none;}
-          .action-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+          .video-actions{display:flex;gap:0.6rem;flex-wrap:nowrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);overflow-x:auto;}
+          .action-btn{display:flex;align-items:center;gap:0.35rem;padding:0.45rem 0.9rem;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:600;transition:all 0.2s;text-decoration:none;white-space:nowrap;}
+          .action-btn:hover{border-color:var(--accent);color:var(--accent);}
           .action-btn.liked{background:var(--accent);border-color:var(--accent);color:#fff;}
-          .download-btn{background:linear-gradient(135deg,#2563eb,#1d4ed8);border-color:#1d4ed8;color:#fff;}
-          .download-btn:hover{background:linear-gradient(135deg,#3b82f6,#2563eb);border-color:#3b82f6;color:#fff;transform:translateY(-1px);}
-          .share-btn{background:linear-gradient(135deg,#16a34a,#15803d);border-color:#15803d;color:#fff;}
-          .share-btn:hover{background:linear-gradient(135deg,#22c55e,#16a34a);border-color:#22c55e;color:#fff;transform:translateY(-1px);}
+          .download-btn{background:#2563eb;border-color:#2563eb;color:#fff;}
+          .download-btn:hover{background:#1d4ed8;border-color:#1d4ed8;color:#fff;}
+          .share-btn{background:#16a34a;border-color:#16a34a;color:#fff;}
+          .share-btn:hover{background:#15803d;border-color:#15803d;color:#fff;}
           .video-description{color:#ccc;font-size:0.9rem;line-height:1.7;margin-bottom:1rem;padding:0.75rem 1rem;background:var(--surface2);border-radius:var(--radius);border-left:3px solid var(--accent);}
           .related-section-title{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;margin-bottom:1rem;letter-spacing:1px;}
           .related-list{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;}
