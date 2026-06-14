@@ -279,6 +279,7 @@ atOptions = {
             )}
 
             <div className="video-actions">
+              <a className="action-btn" href={video.videoUrl} download target="_blank" rel="noopener noreferrer">⬇️ Download</a>
               <button className={`action-btn${liked ? ' liked' : ''}`} onClick={toggleLike}>
                 ❤️ {formatNum(likes[video.id] || 0)} Like
               </button>
