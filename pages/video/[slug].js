@@ -114,7 +114,7 @@ atOptions = {
       return iframe;
     }
 
-    ['ad-banner-top', 'ad-banner-bottom'].forEach(id => {
+    ['ad-banner-top', 'ad-banner-top-desktop', 'ad-banner-bottom'].forEach(id => {
       const container = document.getElementById(id);
       if (!container || container.dataset.loaded) return;
       container.dataset.loaded = 'true';
@@ -228,7 +228,8 @@ atOptions = {
           .breadcrumb a{color:var(--muted);text-decoration:none;}
           .breadcrumb a:hover{color:var(--accent);}
           .related-mobile{display:none;}
-          .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;}
+          .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;overflow:hidden;}
+          .ad-banner-slot iframe{max-width:100%;}
         `}</style>
       </Head>
 
@@ -262,9 +263,6 @@ atOptions = {
               )}
             </div>
 
-            {/* 728x90 Banner Ad - below player */}
-            <div className="ad-banner-slot" id="ad-banner-top"></div>
-
             {/* MyAdCash Video Slider Ad */}
 
             <h1 className="video-title-big">{video.title}</h1>
@@ -289,6 +287,8 @@ atOptions = {
 
             {/* Mobile related */}
             <div className="related-mobile">
+              {/* 728x90 Banner Ad - above related videos */}
+              <div className="ad-banner-slot" id="ad-banner-top"></div>
               <div className="related-section-title">Related Videos</div>
               <div className="related-list">
                 {related.length === 0 ? (
@@ -310,6 +310,8 @@ atOptions = {
 
           {/* Desktop sidebar */}
           <div className="related-sidebar">
+            {/* 728x90 Banner Ad - above related videos */}
+            <div className="ad-banner-slot" id="ad-banner-top-desktop"></div>
             <div className="related-section-title">Related Videos</div>
             <div className="related-list">
               {related.length === 0 ? (
