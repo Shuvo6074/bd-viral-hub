@@ -86,6 +86,42 @@ export default function VideoPage({ video, related }) {
     return () => clearTimeout(interstitialTimer);
   }, [video.id]);
 
+  // Inject highperformanceformat.com 728x90 banner ads (isolated iframe, runs twice)
+  useEffect(() => {
+    function buildAdIframe(key, width, height) {
+      const iframe = document.createElement('iframe');
+      iframe.style.width = width + 'px';
+      iframe.style.height = height + 'px';
+      iframe.style.maxWidth = '100%';
+      iframe.style.border = '0';
+      iframe.style.overflow = 'hidden';
+      iframe.scrolling = 'no';
+
+      const html = `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}</style></head><body>
+<script type="text/javascript">
+atOptions = {
+  'key' : '${key}',
+  'format' : 'iframe',
+  'height' : ${height},
+  'width' : ${width},
+  'params' : {}
+};
+</script>
+<script type="text/javascript" src="https://www.highperformanceformat.com/${key}/invoke.js"></script>
+</body></html>`;
+
+      iframe.srcdoc = html;
+      return iframe;
+    }
+
+    ['ad-banner-top', 'ad-banner-bottom'].forEach(id => {
+      const container = document.getElementById(id);
+      if (!container || container.dataset.loaded) return;
+      container.dataset.loaded = 'true';
+      container.appendChild(buildAdIframe('5adf6dca592b0a84d1333f77bd5c167c', 728, 90));
+    });
+  }, [video.id]);
+
   function toggleLike() {
     const newLikes = { ...likes };
     if (newLikes[video.id]) { delete newLikes[video.id]; setLiked(false); }
@@ -150,8 +186,7 @@ export default function VideoPage({ video, related }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-        <script dangerouslySetInnerHTML={{ __html: `var _adClick=0;document.addEventListener('click',function(){_adClick++;if(_adClick%2===1){window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');}});`}} />
-        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" />
+        <script src="https://pl29731380.effectivecpmnetwork.com/e1/1a/dd/e11add4186ad924a2c35518025bbb7c2.js" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
         {/* MyAdCash Library */}
@@ -193,6 +228,7 @@ export default function VideoPage({ video, related }) {
           .breadcrumb a{color:var(--muted);text-decoration:none;}
           .breadcrumb a:hover{color:var(--accent);}
           .related-mobile{display:none;}
+          .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;}
         `}</style>
       </Head>
 
@@ -224,16 +260,10 @@ export default function VideoPage({ video, related }) {
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', background: '#000' }}
                 />
               )}
-              {/* One-time smartlink overlay */}
-              <div
-                id="player-overlay"
-                onClick={() => {
-                  window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');
-                  document.getElementById('player-overlay').style.display = 'none';
-                }}
-                style={{ position:'absolute', inset:0, zIndex:10, cursor:'pointer', background:'transparent' }}
-              />
             </div>
+
+            {/* 728x90 Banner Ad - below player */}
+            <div className="ad-banner-slot" id="ad-banner-top"></div>
 
             {/* MyAdCash Video Slider Ad */}
 
@@ -311,7 +341,10 @@ export default function VideoPage({ video, related }) {
           <div id="container-e3988ef0a3824ff9822566414d9bbdff-2"></div>
         </div>
 
+        {/* 728x90 Banner Ad - below native banners */}
+        <div className="ad-banner-slot" id="ad-banner-bottom"></div>
+
       </div>
     </>
   );
-  }
+}
