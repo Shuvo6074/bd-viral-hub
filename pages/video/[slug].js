@@ -69,7 +69,17 @@ export default function VideoPage({ video, related }) {
   const [liked, setLiked] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
+  // Interstitial overlay states
+  const [showInterstitial, setShowInterstitial] = useState(false);
+  const [interstitialTimer, setInterstitialTimer] = useState(15);
+  const [canSkip, setCanSkip] = useState(false);
+
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
+
+  // Direct link for the interstitial overlay (Adcash)
+  const INTERSTITIAL_LINK = 'https://www.effectivecpmnetwork.com/vtfcw2wp?key=3f19233a3f7fd2fbe42a2cc2303a1ebf';
+  const INTERSTITIAL_DELAY_MS = 150000; // 2.5 minutes - shows during video playback
+  const SKIP_AFTER_SECONDS = 15;
 
   function handleOverlayClick() {
     window.open(SMARTLINK_URL, '_blank');
@@ -80,6 +90,10 @@ export default function VideoPage({ video, related }) {
     e.preventDefault();
     window.open(SMARTLINK_URL, '_blank');
     setTimeout(() => { window.location.href = `/video/${slug}`; }, 50);
+  }
+
+  function closeInterstitial() {
+    setShowInterstitial(false);
   }
 
   useEffect(() => {
@@ -94,11 +108,28 @@ export default function VideoPage({ video, related }) {
       setViews({ ...v });
     } catch(e) {}
 
-    const interstitialTimer = setTimeout(() => {
-    }, 5000);
+    // Interstitial overlay: show after a delay on every video page visit
+    const interstitialDelayTimer = setTimeout(() => {
+      setShowInterstitial(true);
+      setInterstitialTimer(SKIP_AFTER_SECONDS);
+      setCanSkip(false);
+    }, INTERSTITIAL_DELAY_MS);
 
-    return () => clearTimeout(interstitialTimer);
+    return () => {
+      clearTimeout(interstitialDelayTimer);
+    };
   }, [video.id]);
+
+  // Countdown for the interstitial overlay skip button
+  useEffect(() => {
+    if (!showInterstitial) return;
+    if (interstitialTimer <= 0) {
+      setCanSkip(true);
+      return;
+    }
+    const t = setTimeout(() => setInterstitialTimer(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [showInterstitial, interstitialTimer]);
 
   // Inject highperformanceformat.com 728x90 banner ads (isolated iframe, runs twice)
   useEffect(() => {
@@ -200,10 +231,8 @@ atOptions = {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-        <script src="https://pl29731380.effectivecpmnetwork.com/e1/1a/dd/e11add4186ad924a2c35518025bbb7c2.js" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-        {/* MyAdCash Library */}
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -249,6 +278,43 @@ atOptions = {
           .related-mobile{display:none;}
           .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;overflow:hidden;}
           .ad-banner-slot iframe{max-width:100%;}
+
+          /* Interstitial overlay */
+          .interstitial-overlay{
+            position:fixed;
+            top:0; left:0;
+            width:100vw; height:100vh;
+            background:#000;
+            z-index:99999;
+          }
+          .interstitial-overlay iframe{
+            width:100%;
+            height:100%;
+            border:none;
+          }
+          .interstitial-bar{
+            position:absolute;
+            top:0; left:0; right:0;
+            height:40px;
+            background:rgba(0,0,0,0.75);
+            display:flex;
+            align-items:center;
+            justify-content:flex-end;
+            padding:0 12px;
+            z-index:100000;
+          }
+          .interstitial-timer{
+            color:#fff;
+            font-size:0.85rem;
+            font-family:'DM Sans',sans-serif;
+          }
+          .interstitial-skip{
+            color:var(--accent);
+            font-weight:700;
+            font-size:0.95rem;
+            cursor:pointer;
+            font-family:'DM Sans',sans-serif;
+          }
         `}</style>
       </Head>
 
@@ -285,8 +351,6 @@ atOptions = {
               )}
             </div>
 
-            {/* MyAdCash Video Slider Ad */}
-
             <h1 className="video-title-big">{video.title}</h1>
 
             <div className="video-stats-row">
@@ -310,7 +374,6 @@ atOptions = {
 
             {/* Mobile related */}
             <div className="related-mobile">
-              {/* 728x90 Banner Ad - above related videos */}
               <div className="ad-banner-slot" id="ad-banner-top"></div>
               <div className="related-section-title">Related Videos</div>
               <div className="related-list">
@@ -333,7 +396,6 @@ atOptions = {
 
           {/* Desktop sidebar */}
           <div className="related-sidebar">
-            {/* 728x90 Banner Ad - above related videos */}
             <div className="ad-banner-slot" id="ad-banner-top-desktop"></div>
             <div className="related-section-title">Related Videos</div>
             <div className="related-list">
@@ -370,6 +432,20 @@ atOptions = {
         <div className="ad-banner-slot" id="ad-banner-bottom"></div>
 
       </div>
+
+      {/* Interstitial overlay - shows after user watches for a while */}
+      {showInterstitial && (
+        <div className="interstitial-overlay">
+          <div className="interstitial-bar">
+            {!canSkip ? (
+              <span className="interstitial-timer">{interstitialTimer}</span>
+            ) : (
+              <span className="interstitial-skip" onClick={closeInterstitial}>skip ✕</span>
+            )}
+          </div>
+          <iframe src={INTERSTITIAL_LINK} />
+        </div>
+      )}
     </>
   );
 }
