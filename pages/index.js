@@ -3,10 +3,13 @@ import Head from "next/head";
 
 const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
 const PER_PAGE = 30;
+
+// Smartlink URL — iframe এর ভেতরে লোড হবে, window.open() নেই
 const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
-const FIRST_SHOW_MS  = 15000;
-const REPEAT_MS      = 120000;
-const SKIP_AFTER_SEC = 15;
+
+const FIRST_SHOW_MS  = 15000;  // পেজ লোডের ১৫ সেকেন্ড পর প্রথমবার
+const REPEAT_MS      = 120000; // তারপর প্রতি ২ মিনিট পর
+const SKIP_AFTER_SEC = 15;     // ১৫ সেকেন্ড পর skip দেখাবে
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -24,24 +27,22 @@ function formatNum(n) {
 }
 
 export default function Home() {
-  const [allVideos, setAllVideos]     = useState([]);
-  const [filtered, setFiltered]       = useState([]);
+  const [allVideos, setAllVideos]   = useState([]);
+  const [filtered, setFiltered]     = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQ, setSearchQ]         = useState('');
-  const [activeCat, setActiveCat]     = useState('all');
-  const [cats, setCats]               = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState('');
-  const [views, setViews]             = useState({});
+  const [searchQ, setSearchQ]       = useState('');
+  const [activeCat, setActiveCat]   = useState('all');
+  const [cats, setCats]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [views, setViews]           = useState({});
 
-  // adType: 'full' = fullscreen (প্রথমবার), 'bottom' = উপরে gap (back থেকে)
-  const [showAd, setShowAd]           = useState(false);
-  const [adType, setAdType]           = useState('full');
-  const [adTimer, setAdTimer]         = useState(SKIP_AFTER_SEC);
-  const [canSkip, setCanSkip]         = useState(false);
+  // Interstitial states
+  const [showAd, setShowAd]         = useState(false);
+  const [adTimer, setAdTimer]       = useState(SKIP_AFTER_SEC);
+  const [canSkip, setCanSkip]       = useState(false);
 
-  const repeatTimerRef  = useRef(null);
-  const isFirstShow     = useRef(true);
+  const repeatTimerRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -51,41 +52,23 @@ export default function Home() {
     loadVideos();
   }, []);
 
-  // প্রথমবার ১৫ সেকেন্ড পর — fullscreen
+  // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
   useEffect(() => {
-    const t = setTimeout(() => {
-      triggerAd('full');
+    const firstTimer = setTimeout(() => {
+      openAd();
     }, FIRST_SHOW_MS);
-    return () => clearTimeout(t);
+
+    return () => clearTimeout(firstTimer);
   }, []);
 
-  // Player page থেকে back করলে — bottom style
-  useEffect(() => {
-    const onFocus = () => {
-      if (isFirstShow.current) return; // প্রথম show এর আগে focus এলে ignore
-      triggerAd('bottom');
-    };
-    const onPageShow = (e) => {
-      if (e.persisted) triggerAd('bottom');
-    };
-    window.addEventListener('focus', onFocus);
-    window.addEventListener('pageshow', onPageShow);
-    return () => {
-      window.removeEventListener('focus', onFocus);
-      window.removeEventListener('pageshow', onPageShow);
-      clearTimeout(repeatTimerRef.current);
-    };
-  }, []);
-
-  function triggerAd(type) {
-    isFirstShow.current = false;
-    setAdType(type);
+  function openAd() {
     setShowAd(true);
     setAdTimer(SKIP_AFTER_SEC);
     setCanSkip(false);
+    // পরবর্তী repetition schedule করো
     clearTimeout(repeatTimerRef.current);
     repeatTimerRef.current = setTimeout(() => {
-      triggerAd('bottom');
+      openAd();
     }, REPEAT_MS);
   }
 
@@ -93,15 +76,31 @@ export default function Home() {
     setShowAd(false);
   }
 
-  // Countdown
+  // ── player page থেকে ব্যাক করলে আবার দেখাও ──
+  useEffect(() => {
+    const handleFocus = () => openAd();
+    const handlePageShow = (e) => { if (e.persisted) openAd(); };
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
+      clearTimeout(repeatTimerRef.current);
+    };
+  }, []);
+
+  // ── Skip countdown ──
   useEffect(() => {
     if (!showAd) return;
-    if (adTimer <= 0) { setCanSkip(true); return; }
+    if (adTimer <= 0) {
+      setCanSkip(true);
+      return;
+    }
     const t = setTimeout(() => setAdTimer(n => n - 1), 1000);
     return () => clearTimeout(t);
   }, [showAd, adTimer]);
 
-  // Banner ads inject
+  // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
     const container = document.getElementById('ad-bottom-container');
     if (!container || container.dataset.loaded) return;
@@ -109,12 +108,19 @@ export default function Home() {
 
     function buildAdIframe(key, width, height) {
       const iframe = document.createElement('iframe');
-      iframe.style.cssText = `width:${width}px;height:${height}px;max-width:100%;border:0;overflow:hidden;`;
+      iframe.style.width = width + 'px';
+      iframe.style.height = height + 'px';
+      iframe.style.maxWidth = '100%';
+      iframe.style.border = '0';
+      iframe.style.overflow = 'hidden';
       iframe.scrolling = 'no';
-      iframe.srcdoc = `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}</style></head><body>
-<script type="text/javascript">atOptions={'key':'${key}','format':'iframe','height':${height},'width':${width},'params':{}};</script>
+      const html = `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}</style></head><body>
+<script type="text/javascript">
+atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width},'params':{}};
+</script>
 <script type="text/javascript" src="https://www.highperformanceformat.com/${key}/invoke.js"></script>
 </body></html>`;
+      iframe.srcdoc = html;
       return iframe;
     }
 
@@ -274,65 +280,27 @@ export default function Home() {
             position:fixed !important;bottom:0 !important;top:auto !important;
             left:0 !important;width:100% !important;z-index:9999 !important;
           }
-
-          /* ══ Interstitial — fullscreen (প্রথমবার) ══ */
-          .ad-wrap-full, .ad-wrap-bottom {
-            position:fixed;bottom:0;left:0;right:0;z-index:99999;
+          /* ── Interstitial — player page এর মতোই ── */
+          .interstitial-overlay{
+            position:fixed;top:0;left:0;
+            width:100vw;height:100vh;
+            background:#000;z-index:99999;
           }
-          .ad-backdrop {
-            position:fixed;inset:0;z-index:-1;
-            background:rgba(0,0,0,0.6);
+          .interstitial-overlay iframe{
+            width:100%;height:100%;border:none;
           }
-          .ad-sheet {
-            background:#111;
-            border-radius:18px 18px 0 0;
-            overflow:hidden;
-            box-shadow:0 -6px 40px rgba(0,0,0,0.8);
+          .interstitial-bar{
+            position:absolute;top:0;left:0;right:0;
+            height:40px;background:rgba(0,0,0,0.75);
+            display:flex;align-items:center;justify-content:flex-end;
+            padding:0 12px;z-index:100000;
           }
-
-          /* ══ Shared top bar ══ */
-          .ad-topbar {
-            display:flex;align-items:center;justify-content:space-between;
-            background:#1a1a1a;padding:10px 16px;
-            border-bottom:1px solid #333;
+          .interstitial-timer{
+            color:#fff;font-size:0.85rem;font-family:'DM Sans',sans-serif;
           }
-          .ad-goto {
-            background:#333;color:#fff;padding:8px 18px;
-            border-radius:6px;font-size:14px;text-decoration:none;font-weight:600;
-          }
-          .ad-timer-circle {
-            width:44px;height:44px;border-radius:50%;
-            background:#ff6600;
-            display:flex;align-items:center;justify-content:center;
-            color:#fff;font-weight:700;font-size:18px;
-            transition:background 0.3s;
-            cursor:default;
-          }
-          .ad-timer-circle.can-skip {
-            background:#444;cursor:pointer;font-size:16px;
-          }
-
-          /* ══ Full overlay body ══ */
-          .ad-body-full {
-            text-align:center;color:#fff;padding:28px 20px;
-          }
-          .ad-icon { font-size:52px;margin-bottom:14px; }
-          .ad-title { font-size:20px;font-weight:700;margin-bottom:8px; }
-          .ad-sub   { font-size:14px;color:#aaa; }
-          .ad-countdown-text {
-            margin-top:22px;font-size:15px;color:#ccc;
-            background:rgba(255,255,255,0.07);
-            display:inline-block;padding:6px 18px;border-radius:20px;
-          }
-
-          /* ══ Bottom sheet body ══ */
-          .ad-body-bottom {
-            text-align:center;color:#fff;padding:22px 20px 28px;
-          }
-          .ad-skip-text {
-            font-size:13px;color:#fff;margin-top:14px;
-            background:rgba(255,255,255,0.08);
-            display:inline-block;padding:5px 16px;border-radius:20px;
+          .interstitial-skip{
+            color:var(--accent);font-weight:700;font-size:0.95rem;
+            cursor:pointer;font-family:'DM Sans',sans-serif;
           }
         `}</style>
       </Head>
@@ -406,6 +374,7 @@ export default function Home() {
             <button className="page-btn" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>Next →</button>
           </div>
         )}
+
         <div id="ad-bottom-container"></div>
       </div>
 
@@ -442,65 +411,19 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* ══ AD OVERLAY ══ */}
-      {showAd && adType === 'full' && (
-        <div className="ad-wrap-full">
-          <div className="ad-backdrop" onClick={canSkip ? closeAd : undefined} />
-          <div className="ad-sheet">
-            <div className="ad-topbar">
-              <a href={SMARTLINK_URL} target="_blank" rel="noopener noreferrer" className="ad-goto">
-                Go to website
-              </a>
-              <div
-                className={`ad-timer-circle${canSkip ? ' can-skip' : ''}`}
-                onClick={canSkip ? closeAd : undefined}
-              >
-                {canSkip ? '✕' : adTimer}
-              </div>
-            </div>
-            <div className="ad-body-bottom">
-              <div className="ad-icon">📢</div>
-              <div className="ad-title">বিজ্ঞাপন লোড হচ্ছে...</div>
-              <div className="ad-sub">নতুন ট্যাবে বিজ্ঞাপন খুলেছে</div>
-              {!canSkip ? (
-                <div className="ad-skip-text">{adTimer} সেকেন্ড পর বন্ধ করা যাবে</div>
-              ) : (
-                <div className="ad-skip-text" style={{cursor:'pointer'}} onClick={closeAd}>✕ বন্ধ করুন</div>
-              )}
-            </div>
+      {/* ── Interstitial Overlay — player page এর মতো একই system ── */}
+      {showAd && (
+        <div className="interstitial-overlay">
+          <div className="interstitial-bar">
+            {!canSkip ? (
+              <span className="interstitial-timer">{adTimer}</span>
+            ) : (
+              <span className="interstitial-skip" onClick={closeAd}>skip ✕</span>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* ══ BOTTOM SHEET AD (back থেকে / repeat) ══ */}
-      {showAd && adType === 'bottom' && (
-        <div className="ad-wrap-bottom">
-          <div className="ad-backdrop" onClick={canSkip ? closeAd : undefined} />
-          <div className="ad-sheet">
-            <div className="ad-topbar">
-              <a href={SMARTLINK_URL} target="_blank" rel="noopener noreferrer" className="ad-goto">
-                Go to website
-              </a>
-              <div
-                className={`ad-timer-circle${canSkip ? ' can-skip' : ''}`}
-                onClick={canSkip ? closeAd : undefined}
-              >
-                {canSkip ? '✕' : adTimer}
-              </div>
-            </div>
-            <div className="ad-body-bottom">
-              <div className="ad-icon">📢</div>
-              <div className="ad-title">বিজ্ঞাপন</div>
-              <div className="ad-sub">Go to website-এ ক্লিক করুন</div>
-              {!canSkip ? (
-                <div className="ad-skip-text">{adTimer} সেকেন্ড পর skip করা যাবে</div>
-              ) : (
-                <div className="ad-skip-text" style={{cursor:'pointer'}} onClick={closeAd}>✕ বন্ধ করুন</div>
-              )}
-            </div>
-          </div>
+          <iframe src={SMARTLINK_URL} />
         </div>
       )}
     </>
   );
-    }
+  }
