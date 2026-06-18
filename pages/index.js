@@ -29,6 +29,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [views, setViews] = useState({});
+  const [showAd, setShowAd] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(15);
+  const [adCanClose, setAdCanClose] = useState(false);
 
   useEffect(() => {
     try {
@@ -37,6 +40,29 @@ export default function Home() {
     } catch(e) {}
     loadVideos();
   }, []);
+
+  // Interstitial ad: show after 15 seconds
+  useEffect(() => {
+    const showTimer = setTimeout(() => {
+      setShowAd(true);
+      setAdCountdown(15);
+      setAdCanClose(false);
+    }, 15000);
+    return () => clearTimeout(showTimer);
+  }, []);
+
+  // Countdown timer when ad is shown
+  useEffect(() => {
+    if (!showAd) return;
+    if (adCountdown <= 0) {
+      setAdCanClose(true);
+      // Auto close 2 seconds after X appears
+      const autoClose = setTimeout(() => setShowAd(false), 2000);
+      return () => clearTimeout(autoClose);
+    }
+    const tick = setTimeout(() => setAdCountdown(n => n - 1), 1000);
+    return () => clearTimeout(tick);
+  }, [showAd, adCountdown]);
 
   // Inject highperformanceformat.com ad scripts (isolated per-iframe so each
   // ad unit gets its own atOptions/document.write context)
@@ -87,7 +113,7 @@ atOptions = {
     gridWrap.style.gap = '1rem';
     gridWrap.style.margin = '1rem 0';
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 5; i++) {
       const cell = document.createElement('div');
       cell.style.width = '300px';
       cell.style.height = '250px';
@@ -151,6 +177,55 @@ atOptions = {
 
   return (
     <>
+      {/* Interstitial Ad Overlay */}
+      {showAd && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            position: 'relative', width: '90%', maxWidth: '500px',
+            background: '#111', borderRadius: '10px', overflow: 'hidden',
+            boxShadow: '0 0 40px rgba(255,61,61,0.4)',
+          }}>
+            {/* Top bar */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#1a1a1a', padding: '8px 12px',
+              borderBottom: '1px solid #333',
+            }}>
+              <a
+                href="https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd"
+                target="_blank" rel="noopener noreferrer"
+                style={{
+                  background: '#222', color: '#fff', padding: '6px 14px',
+                  borderRadius: '5px', fontSize: '13px', textDecoration: 'none',
+                  fontWeight: 600,
+                }}
+              >Go to website</a>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: adCanClose ? '#333' : '#e50',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: adCanClose ? 'pointer' : 'default',
+                color: '#fff', fontWeight: 700, fontSize: '15px',
+                transition: 'background 0.3s',
+              }} onClick={() => adCanClose && setShowAd(false)}>
+                {adCanClose ? '✕' : adCountdown}
+              </div>
+            </div>
+
+            {/* Ad iframe */}
+            <iframe
+              src="https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd"
+              style={{ width: '100%', height: '320px', border: 'none', display: 'block' }}
+              title="Advertisement"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+            />
+          </div>
+        </div>
+      )}
       <Head>
         <title>BD Viral Hub | বাংলাদেশের সেরা ভাইরাল ভিডিও ২০২৬</title>
         <meta name="description" content="BD Viral Hub - বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট। আজকের নতুন ভাইরাল ভিডিও লিংক, TikTok ভাইরাল ক্লিপ, Facebook Reels ভাইরাল, ফানি ভিডিও বিনামূল্যে দেখুন।" />
@@ -173,8 +248,7 @@ atOptions = {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-        <script dangerouslySetInnerHTML={{ __html: `var _adClick=0;document.addEventListener('click',function(){_adClick++;if(_adClick%2===1){window.open('https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9','_blank');}});`}} />
-        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" />
+
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify({
