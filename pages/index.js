@@ -1,8 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 
 const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
 const PER_PAGE = 30;
+
+// Smartlink URL — iframe এর ভেতরে লোড হবে, window.open() নেই
+const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
+
+const FIRST_SHOW_MS  = 15000;  // পেজ লোডের ১৫ সেকেন্ড পর প্রথমবার
+const REPEAT_MS      = 120000; // তারপর প্রতি ২ মিনিট পর
+const SKIP_AFTER_SEC = 15;     // ১৫ সেকেন্ড পর skip দেখাবে
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -20,18 +27,22 @@ function formatNum(n) {
 }
 
 export default function Home() {
-  const [allVideos, setAllVideos] = useState([]);
-  const [filtered, setFiltered] = useState([]);
+  const [allVideos, setAllVideos]   = useState([]);
+  const [filtered, setFiltered]     = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQ, setSearchQ] = useState('');
-  const [activeCat, setActiveCat] = useState('all');
-  const [cats, setCats] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [views, setViews] = useState({});
-  const [showAd, setShowAd] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(15);
-  const [adCanClose, setAdCanClose] = useState(false);
+  const [searchQ, setSearchQ]       = useState('');
+  const [activeCat, setActiveCat]   = useState('all');
+  const [cats, setCats]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
+  const [views, setViews]           = useState({});
+
+  // Interstitial states
+  const [showAd, setShowAd]         = useState(false);
+  const [adTimer, setAdTimer]       = useState(SKIP_AFTER_SEC);
+  const [canSkip, setCanSkip]       = useState(false);
+
+  const repeatTimerRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -41,31 +52,55 @@ export default function Home() {
     loadVideos();
   }, []);
 
-  // Interstitial ad: show after 15 seconds, open CPM link in new tab
+  // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
   useEffect(() => {
-    const showTimer = setTimeout(() => {
-      window.open('https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd', '_blank');
-      setShowAd(true);
-      setAdCountdown(15);
-      setAdCanClose(false);
-    }, 15000);
-    return () => clearTimeout(showTimer);
+    const firstTimer = setTimeout(() => {
+      openAd();
+    }, FIRST_SHOW_MS);
+
+    return () => clearTimeout(firstTimer);
   }, []);
 
-  // Countdown timer when ad is shown
+  function openAd() {
+    setShowAd(true);
+    setAdTimer(SKIP_AFTER_SEC);
+    setCanSkip(false);
+    // পরবর্তী repetition schedule করো
+    clearTimeout(repeatTimerRef.current);
+    repeatTimerRef.current = setTimeout(() => {
+      openAd();
+    }, REPEAT_MS);
+  }
+
+  function closeAd() {
+    setShowAd(false);
+  }
+
+  // ── player page থেকে ব্যাক করলে আবার দেখাও ──
+  useEffect(() => {
+    const handleFocus = () => openAd();
+    const handlePageShow = (e) => { if (e.persisted) openAd(); };
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
+      clearTimeout(repeatTimerRef.current);
+    };
+  }, []);
+
+  // ── Skip countdown ──
   useEffect(() => {
     if (!showAd) return;
-    if (adCountdown <= 0) {
-      setAdCanClose(true);
-      const autoClose = setTimeout(() => setShowAd(false), 2000);
-      return () => clearTimeout(autoClose);
+    if (adTimer <= 0) {
+      setCanSkip(true);
+      return;
     }
-    const tick = setTimeout(() => setAdCountdown(n => n - 1), 1000);
-    return () => clearTimeout(tick);
-  }, [showAd, adCountdown]);
+    const t = setTimeout(() => setAdTimer(n => n - 1), 1000);
+    return () => clearTimeout(t);
+  }, [showAd, adTimer]);
 
-  // Inject highperformanceformat.com ad scripts (isolated per-iframe so each
-  // ad unit gets its own atOptions/document.write context)
+  // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
     const container = document.getElementById('ad-bottom-container');
     if (!container || container.dataset.loaded) return;
@@ -79,58 +114,38 @@ export default function Home() {
       iframe.style.border = '0';
       iframe.style.overflow = 'hidden';
       iframe.scrolling = 'no';
-
       const html = `<!DOCTYPE html><html><head><style>html,body{margin:0;padding:0;overflow:hidden;}</style></head><body>
 <script type="text/javascript">
-atOptions = {
-  'key' : '${key}',
-  'format' : 'iframe',
-  'height' : ${height},
-  'width' : ${width},
-  'params' : {}
-};
+atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width},'params':{}};
 </script>
 <script type="text/javascript" src="https://www.highperformanceformat.com/${key}/invoke.js"></script>
 </body></html>`;
-
       iframe.srcdoc = html;
       return iframe;
     }
 
-    // 1) Banner 728x90 - shows first, on top
     const bannerWrap = document.createElement('div');
-    bannerWrap.style.display = 'flex';
-    bannerWrap.style.justifyContent = 'center';
-    bannerWrap.style.margin = '1rem 0';
+    bannerWrap.style.cssText = 'display:flex;justify-content:center;margin:1rem 0;';
     bannerWrap.appendChild(buildAdIframe('5adf6dca592b0a84d1333f77bd5c167c', 728, 90));
     container.appendChild(bannerWrap);
 
-    // 2) 300x250 ad blocks x10 - shown below the banner
     const gridWrap = document.createElement('div');
-    gridWrap.style.display = 'flex';
-    gridWrap.style.flexWrap = 'wrap';
-    gridWrap.style.justifyContent = 'center';
-    gridWrap.style.gap = '1rem';
-    gridWrap.style.margin = '1rem 0';
-
+    gridWrap.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;margin:1rem 0;';
     for (let i = 0; i < 5; i++) {
       const cell = document.createElement('div');
-      cell.style.width = '300px';
-      cell.style.height = '250px';
+      cell.style.cssText = 'width:300px;height:250px;';
       cell.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
       gridWrap.appendChild(cell);
     }
-
     container.appendChild(gridWrap);
   }, [loading]);
 
   async function loadVideos() {
     try {
-      const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
+      const res  = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
       const text = await res.text();
       const json = JSON.parse(text.substring(47, text.length - 2));
-      const rows = json.table.rows;
-      const videos = rows.map((row, i) => ({
+      const videos = json.table.rows.map((row, i) => ({
         id: i,
         title:       row.c[0]?.v || 'Untitled',
         videoUrl:    row.c[1]?.v || '',
@@ -142,8 +157,7 @@ atOptions = {
         slug:        slugify(row.c[0]?.v || 'video')
       })).filter(v => v.title !== 'Title').reverse();
 
-      const uniqueCats = [...new Set(videos.map(v => v.category))];
-      setCats(uniqueCats);
+      setCats([...new Set(videos.map(v => v.category))]);
       setAllVideos(videos);
       setFiltered(videos);
       setLoading(false);
@@ -173,59 +187,10 @@ atOptions = {
   }
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
+  const paginated  = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
 
   return (
     <>
-      {/* Interstitial Ad Overlay - Fullscreen */}
-      {showAd && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 99999,
-          background: 'rgba(0,0,0,0.92)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
-          {/* Top bar - full width */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: '#1a1a1a', padding: '10px 16px',
-            borderBottom: '1px solid #333',
-          }}>
-            <a
-              href="https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd"
-              target="_blank" rel="noopener noreferrer"
-              style={{
-                background: '#333', color: '#fff', padding: '8px 18px',
-                borderRadius: '6px', fontSize: '14px', textDecoration: 'none',
-                fontWeight: 600,
-              }}
-            >Go to website</a>
-            <div style={{
-              width: '38px', height: '38px', borderRadius: '50%',
-              background: adCanClose ? '#444' : '#ff6600',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: adCanClose ? 'pointer' : 'default',
-              color: '#fff', fontWeight: 700, fontSize: '16px',
-              transition: 'background 0.3s',
-            }} onClick={() => adCanClose && setShowAd(false)}>
-              {adCanClose ? '✕' : adCountdown}
-            </div>
-          </div>
-
-          {/* Center message */}
-          <div style={{ textAlign: 'center', color: '#fff', padding: '20px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📢</div>
-            <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>বিজ্ঞাপন লোড হচ্ছে...</div>
-            <div style={{ fontSize: '14px', color: '#aaa' }}>নতুন ট্যাবে বিজ্ঞাপন খুলেছে</div>
-            {!adCanClose && (
-              <div style={{ marginTop: '20px', fontSize: '13px', color: '#888' }}>
-                {adCountdown} সেকেন্ড পর বন্ধ করা যাবে
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       <Head>
         <title>BD Viral Hub | বাংলাদেশের সেরা ভাইরাল ভিডিও ২০২৬</title>
         <meta name="description" content="BD Viral Hub - বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট। আজকের নতুন ভাইরাল ভিডিও লিংক, TikTok ভাইরাল ক্লিপ, Facebook Reels ভাইরাল, ফানি ভিডিও বিনামূল্যে দেখুন।" />
@@ -248,22 +213,11 @@ atOptions = {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "BD Viral Hub",
-            "url": "https://bd-viral-hub.vercel.app",
-            "description": "বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://bd-viral-hub.vercel.app/search?q={search_term_string}",
-              "query-input": "required name=search_term_string"
-            }
-          })}}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context":"https://schema.org","@type":"WebSite","name":"BD Viral Hub",
+          "url":"https://bd-viral-hub.vercel.app","description":"বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট",
+          "potentialAction":{"@type":"SearchAction","target":"https://bd-viral-hub.vercel.app/search?q={search_term_string}","query-input":"required name=search_term_string"}
+        })}} />
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -323,12 +277,30 @@ atOptions = {
           body{padding-bottom:55px;}
           #adbox-5c5fa829d1b2adb187a491231ec4716f,
           div[id*="5c5fa829d1b2adb187a491231ec4716f"]{
-            position:fixed !important;
-            bottom:0 !important;
-            top:auto !important;
-            left:0 !important;
-            width:100% !important;
-            z-index:9999 !important;
+            position:fixed !important;bottom:0 !important;top:auto !important;
+            left:0 !important;width:100% !important;z-index:9999 !important;
+          }
+          /* ── Interstitial — player page এর মতোই ── */
+          .interstitial-overlay{
+            position:fixed;top:0;left:0;
+            width:100vw;height:100vh;
+            background:#000;z-index:99999;
+          }
+          .interstitial-overlay iframe{
+            width:100%;height:100%;border:none;
+          }
+          .interstitial-bar{
+            position:absolute;top:0;left:0;right:0;
+            height:40px;background:rgba(0,0,0,0.75);
+            display:flex;align-items:center;justify-content:flex-end;
+            padding:0 12px;z-index:100000;
+          }
+          .interstitial-timer{
+            color:#fff;font-size:0.85rem;font-family:'DM Sans',sans-serif;
+          }
+          .interstitial-skip{
+            color:var(--accent);font-weight:700;font-size:0.95rem;
+            cursor:pointer;font-family:'DM Sans',sans-serif;
           }
         `}</style>
       </Head>
@@ -337,12 +309,7 @@ atOptions = {
         <div className="header-inner">
           <a className="logo" href="/">BD Viral<span>Hub</span></a>
           <div className="search-bar">
-            <input
-              type="text"
-              placeholder="ভিডিও খুঁজুন..."
-              value={searchQ}
-              onChange={e => handleSearch(e.target.value)}
-            />
+            <input type="text" placeholder="ভিডিও খুঁজুন..." value={searchQ} onChange={e => handleSearch(e.target.value)} />
             <button>🔍</button>
           </div>
         </div>
@@ -358,12 +325,8 @@ atOptions = {
       <div className="main">
         <div className="section-title">{activeCat === 'all' ? 'Latest Videos' : activeCat}</div>
 
-        {loading && (
-          <div className="loading"><div className="spinner"></div><p>Loading videos...</p></div>
-        )}
-        {error && (
-          <div className="empty">❌ Could not load videos.<br /><small>{error}</small></div>
-        )}
+        {loading && <div className="loading"><div className="spinner"></div><p>Loading videos...</p></div>}
+        {error   && <div className="empty">❌ Could not load videos.<br /><small>{error}</small></div>}
 
         {!loading && !error && (
           <div className="video-grid">
@@ -402,18 +365,16 @@ atOptions = {
           <div className="pagination">
             <button className="page-btn" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>← Prev</button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(i => {
-              if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+              if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1)
                 return <button key={i} className={`page-btn${i === currentPage ? ' active' : ''}`} onClick={() => { setCurrentPage(i); window.scrollTo(0,0); }}>{i}</button>;
-              } else if (Math.abs(i - currentPage) === 2) {
+              else if (Math.abs(i - currentPage) === 2)
                 return <span key={i} className="page-info">...</span>;
-              }
               return null;
             })}
             <button className="page-btn" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>Next →</button>
           </div>
         )}
 
-        {/* Ad slots: 728x90 banner first, then 10x 300x250 ad blocks */}
         <div id="ad-bottom-container"></div>
       </div>
 
@@ -449,6 +410,20 @@ atOptions = {
           </div>
         </div>
       </footer>
+
+      {/* ── Interstitial Overlay — player page এর মতো একই system ── */}
+      {showAd && (
+        <div className="interstitial-overlay">
+          <div className="interstitial-bar">
+            {!canSkip ? (
+              <span className="interstitial-timer">{adTimer}</span>
+            ) : (
+              <span className="interstitial-skip" onClick={closeAd}>skip ✕</span>
+            )}
+          </div>
+          <iframe src={SMARTLINK_URL} />
+        </div>
+      )}
     </>
   );
 }
