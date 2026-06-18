@@ -41,9 +41,10 @@ export default function Home() {
     loadVideos();
   }, []);
 
-  // Interstitial ad: show after 15 seconds
+  // Interstitial ad: show after 15 seconds, open CPM link in new tab
   useEffect(() => {
     const showTimer = setTimeout(() => {
+      window.open('https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd', '_blank');
       setShowAd(true);
       setAdCountdown(15);
       setAdCanClose(false);
@@ -56,7 +57,6 @@ export default function Home() {
     if (!showAd) return;
     if (adCountdown <= 0) {
       setAdCanClose(true);
-      // Auto close 2 seconds after X appears
       const autoClose = setTimeout(() => setShowAd(false), 2000);
       return () => clearTimeout(autoClose);
     }
@@ -177,52 +177,52 @@ atOptions = {
 
   return (
     <>
-      {/* Interstitial Ad Overlay */}
+      {/* Interstitial Ad Overlay - Fullscreen */}
       {showAd && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 99999,
-          background: 'rgba(0,0,0,0.85)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.92)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
         }}>
+          {/* Top bar - full width */}
           <div style={{
-            position: 'relative', width: '90%', maxWidth: '500px',
-            background: '#111', borderRadius: '10px', overflow: 'hidden',
-            boxShadow: '0 0 40px rgba(255,61,61,0.4)',
+            position: 'absolute', top: 0, left: 0, right: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: '#1a1a1a', padding: '10px 16px',
+            borderBottom: '1px solid #333',
           }}>
-            {/* Top bar */}
+            <a
+              href="https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd"
+              target="_blank" rel="noopener noreferrer"
+              style={{
+                background: '#333', color: '#fff', padding: '8px 18px',
+                borderRadius: '6px', fontSize: '14px', textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >Go to website</a>
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              background: '#1a1a1a', padding: '8px 12px',
-              borderBottom: '1px solid #333',
-            }}>
-              <a
-                href="https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd"
-                target="_blank" rel="noopener noreferrer"
-                style={{
-                  background: '#222', color: '#fff', padding: '6px 14px',
-                  borderRadius: '5px', fontSize: '13px', textDecoration: 'none',
-                  fontWeight: 600,
-                }}
-              >Go to website</a>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '50%',
-                background: adCanClose ? '#333' : '#e50',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: adCanClose ? 'pointer' : 'default',
-                color: '#fff', fontWeight: 700, fontSize: '15px',
-                transition: 'background 0.3s',
-              }} onClick={() => adCanClose && setShowAd(false)}>
-                {adCanClose ? '✕' : adCountdown}
-              </div>
+              width: '38px', height: '38px', borderRadius: '50%',
+              background: adCanClose ? '#444' : '#ff6600',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: adCanClose ? 'pointer' : 'default',
+              color: '#fff', fontWeight: 700, fontSize: '16px',
+              transition: 'background 0.3s',
+            }} onClick={() => adCanClose && setShowAd(false)}>
+              {adCanClose ? '✕' : adCountdown}
             </div>
+          </div>
 
-            {/* Ad iframe */}
-            <iframe
-              src="https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd"
-              style={{ width: '100%', height: '320px', border: 'none', display: 'block' }}
-              title="Advertisement"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-            />
+          {/* Center message */}
+          <div style={{ textAlign: 'center', color: '#fff', padding: '20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📢</div>
+            <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>বিজ্ঞাপন লোড হচ্ছে...</div>
+            <div style={{ fontSize: '14px', color: '#aaa' }}>নতুন ট্যাবে বিজ্ঞাপন খুলেছে</div>
+            {!adCanClose && (
+              <div style={{ marginTop: '20px', fontSize: '13px', color: '#888' }}>
+                {adCountdown} সেকেন্ড পর বন্ধ করা যাবে
+              </div>
+            )}
           </div>
         </div>
       )}
