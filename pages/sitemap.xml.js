@@ -3,7 +3,7 @@ const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
 function slugify(text) {
   return text.toString().toLowerCase()
     .replace(/\s+/g, '-')
-    .replace(/[^\w\u0980-\u09FF-]/g, '')
+    .replace(/[^\w-]/g, '')   // বাংলা সহ সব non-ASCII বাদ দেবে
     .replace(/--+/g, '-')
     .replace(/^-+|-+$/g, '')
     .substring(0, 80);
@@ -23,27 +23,35 @@ export async function getServerSideProps({ res }) {
     const videos = rows.map(row => ({
       title: row.c[0]?.v || 'video',
       slug: slugify(row.c[0]?.v || 'video')
-    })).filter(v => v.title !== 'Title');
+    })).filter(v => v.title !== 'Title' && v.slug.length > 2);
 
-    const urls = videos.map(v => `
-  <url>
-    <loc>${siteUrl}/video/${v.slug}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>`).join('');
+    // Duplicate slug বাদ দেওয়া
+    const seen = new Set();
+    const uniqueVideos = videos.filter(v => {
+      if (seen.has(v.slug)) return false;
+      seen.add(v.slug);
+      return true;
+    });
+
+    const urls = uniqueVideos.map(v => `
+    <url>
+      <loc>${siteUrl}/video/${v.slug}</loc>
+      <lastmod>${today}</lastmod>
+      <changefreq>weekly</changefreq>
+      <priority>0.8</priority>
+    </url>`).join('');
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${siteUrl}/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>${urls}
+    <url>
+      <loc>${siteUrl}</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>${urls}
 </urlset>`;
 
     res.setHeader('Content-Type', 'application/xml');
-    res.setHeader('Cache-Control', 'public, s-maxage=3600');
+    res.setHeader('Cache-Control', 'public, s-maxage=600');  // 10 মিনিট cache
     res.write(sitemap);
     res.end();
   } catch(e) {
