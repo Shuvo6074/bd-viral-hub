@@ -26,14 +26,47 @@ function formatNum(n) {
   return n.toString();
 }
 
-export default function Home() {
-  const [allVideos, setAllVideos]   = useState([]);
-  const [filtered, setFiltered]     = useState([]);
+const SHEET_ID_SSR = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
+
+function slugifySSR(text) {
+  return text.toString().toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .substring(0, 80);
+}
+
+export async function getServerSideProps() {
+  try {
+    const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_SSR}/gviz/tq?tqx=out:json`);
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47, text.length - 2));
+    const initialVideos = json.table.rows.map((row, i) => ({
+      id: i,
+      title:       row.c[0]?.v || 'Untitled',
+      videoUrl:    row.c[1]?.v || '',
+      thumbnail:   row.c[2]?.v || `https://picsum.photos/seed/${i}/640/360`,
+      category:    row.c[3]?.v || 'General',
+      date:        row.c[4]?.v || '',
+      duration:    row.c[5]?.v || '',
+      description: row.c[6]?.v || '',
+      slug:        slugifySSR(row.c[0]?.v || 'video')
+    })).filter(v => v.title !== 'Title').reverse();
+    return { props: { initialVideos } };
+  } catch(e) {
+    return { props: { initialVideos: [] } };
+  }
+}
+
+export default function Home({ initialVideos }) {
+  const [allVideos, setAllVideos]   = useState(initialVideos);
+  const [filtered, setFiltered]     = useState(initialVideos);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQ, setSearchQ]       = useState('');
   const [activeCat, setActiveCat]   = useState('all');
-  const [cats, setCats]             = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [cats, setCats]             = useState([...new Set(initialVideos.map(v => v.category))]);
+  const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
   const [views, setViews]           = useState({});
 
@@ -49,7 +82,6 @@ export default function Home() {
       const v = JSON.parse(localStorage.getItem('vhub_views') || '{}');
       setViews(v);
     } catch(e) {}
-    loadVideos();
   }, []);
 
   // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
