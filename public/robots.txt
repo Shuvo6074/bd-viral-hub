@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bd-viral-hub.vercel.app/sitemap.xml
