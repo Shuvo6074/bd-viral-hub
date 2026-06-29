@@ -84,15 +84,13 @@ export default function Home({ initialVideos }) {
     } catch(e) {}
   }, []);
 
-  // ── Social Bar Ad inject — প্রতিবার page visit এ কাজ করবে ──
+  // ── Social Bar Ad inject — একবার inject, remove করা হবে না ──
   useEffect(() => {
-    const existing = document.querySelector('script[src*="5c5fa829d1b2adb187a491231ec4716f"]');
-    if (existing) existing.remove();
+    if (document.querySelector('script[src*="5c5fa829d1b2adb187a491231ec4716f"]')) return;
     const s = document.createElement('script');
     s.src = 'https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js';
     s.async = true;
     document.body.appendChild(s);
-    return () => { s.remove(); };
   }, []);
 
   // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
@@ -256,7 +254,6 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
           "url":"https://bd-viral-hub.vercel.app","description":"বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট",
           "potentialAction":{"@type":"SearchAction","target":"https://bd-viral-hub.vercel.app/search?q={search_term_string}","query-input":"required name=search_term_string"}
         })}} />
-        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" strategy="afterInteractive"></script>
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -399,18 +396,18 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
                 </a>
                 {(i + 1) % 15 === 0 && (
                   <div
-                    key={`native-ad-${Math.floor((i+1)/15)}`}
-                    style={{gridColumn:'1/-1',margin:'0.5rem 0',display:'flex',justifyContent:'center'}}
+                    style={{gridColumn:'1/-1',margin:'1.5rem 0',padding:'0.5rem 0',borderTop:'1px solid var(--border)',borderBottom:'1px solid var(--border)',display:'flex',justifyContent:'center',minHeight:'100px'}}
                     ref={el => {
                       if (!el || el.dataset.loaded) return;
                       el.dataset.loaded = 'true';
+                      const containerId = `container-e3988ef0a3824ff9822566414d9bbdff`;
+                      const d = document.createElement('div');
+                      d.id = containerId;
+                      el.appendChild(d);
                       const s = document.createElement('script');
                       s.async = true;
                       s.setAttribute('data-cfasync', 'false');
                       s.src = 'https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js';
-                      const d = document.createElement('div');
-                      d.id = `container-e3988ef0a3824ff9822566414d9bbdff-home-${Math.floor((i+1)/15)}`;
-                      el.appendChild(d);
                       el.appendChild(s);
                     }}
                   ></div>
