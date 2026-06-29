@@ -78,7 +78,7 @@ export default function VideoPage({ video, related }) {
 
   // Direct link for the interstitial overlay
   const INTERSTITIAL_LINK = 'https://omg10.com/4/11207341';
-  const INTERSTITIAL_DELAY_MS = 150000; // 2.5 minutes - shows during video playback
+  const INTERSTITIAL_DELAY_MS = 60000; // 1 minute - shows during video playback
   const SKIP_AFTER_SECONDS = 11;
 
   function handleOverlayClick() {
