@@ -7,9 +7,9 @@ const PER_PAGE = 30;
 // Smartlink URL — iframe এর ভেতরে লোড হবে, window.open() নেই
 const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
 
-const FIRST_SHOW_MS  = 15000;  // পেজ লোডের ১৫ সেকেন্ড পর প্রথমবার
+const FIRST_SHOW_MS  = 10000;  // পেজ লোডের ১০ সেকেন্ড পর প্রথমবার
 const REPEAT_MS      = 120000; // তারপর প্রতি ২ মিনিট পর
-const SKIP_AFTER_SEC = 15;     // ১৫ সেকেন্ড পর skip দেখাবে
+const SKIP_AFTER_SEC = 10;     // ১০ সেকেন্ড পর skip দেখাবে
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -84,6 +84,17 @@ export default function Home({ initialVideos }) {
     } catch(e) {}
   }, []);
 
+  // ── Social Bar Ad inject — প্রতিবার page visit এ কাজ করবে ──
+  useEffect(() => {
+    const existing = document.querySelector('script[src*="5c5fa829d1b2adb187a491231ec4716f"]');
+    if (existing) existing.remove();
+    const s = document.createElement('script');
+    s.src = 'https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js';
+    s.async = true;
+    document.body.appendChild(s);
+    return () => { s.remove(); };
+  }, []);
+
   // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
   useEffect(() => {
     const firstTimer = setTimeout(() => {
@@ -97,25 +108,22 @@ export default function Home({ initialVideos }) {
     setShowAd(true);
     setAdTimer(SKIP_AFTER_SEC);
     setCanSkip(false);
-    // পরবর্তী repetition schedule করো
+  }
+
+  function closeAd() {
+    setShowAd(false);
+    // skip করার পর ২ মিনিট পর আবার দেখাবে
     clearTimeout(repeatTimerRef.current);
     repeatTimerRef.current = setTimeout(() => {
       openAd();
     }, REPEAT_MS);
   }
 
-  function closeAd() {
-    setShowAd(false);
-  }
-
-  // ── player page থেকে ব্যাক করলে আবার দেখাও ──
+  // ── player page থেকে ব্যাক করলে একবার দেখাও ──
   useEffect(() => {
-    const handleFocus = () => openAd();
     const handlePageShow = (e) => { if (e.persisted) openAd(); };
-    window.addEventListener('focus', handleFocus);
     window.addEventListener('pageshow', handlePageShow);
     return () => {
-      window.removeEventListener('focus', handleFocus);
       window.removeEventListener('pageshow', handlePageShow);
       clearTimeout(repeatTimerRef.current);
     };
@@ -248,7 +256,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
           "url":"https://bd-viral-hub.vercel.app","description":"বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট",
           "potentialAction":{"@type":"SearchAction","target":"https://bd-viral-hub.vercel.app/search?q={search_term_string}","query-input":"required name=search_term_string"}
         })}} />
-        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js"></script>
+        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js" strategy="afterInteractive"></script>
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -390,10 +398,22 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
                   </div>
                 </a>
                 {(i + 1) % 15 === 0 && (
-                  <div style={{gridColumn:'1/-1',margin:'0.5rem 0',display:'flex',justifyContent:'center'}}>
-                    <script async={true} data-cfasync="false" src="https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js"></script>
-                    <div id={`container-e3988ef0a3824ff9822566414d9bbdff-home-${Math.floor((i+1)/15)}`}></div>
-                  </div>
+                  <div
+                    key={`native-ad-${Math.floor((i+1)/15)}`}
+                    style={{gridColumn:'1/-1',margin:'0.5rem 0',display:'flex',justifyContent:'center'}}
+                    ref={el => {
+                      if (!el || el.dataset.loaded) return;
+                      el.dataset.loaded = 'true';
+                      const s = document.createElement('script');
+                      s.async = true;
+                      s.setAttribute('data-cfasync', 'false');
+                      s.src = 'https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js';
+                      const d = document.createElement('div');
+                      d.id = `container-e3988ef0a3824ff9822566414d9bbdff-home-${Math.floor((i+1)/15)}`;
+                      el.appendChild(d);
+                      el.appendChild(s);
+                    }}
+                  ></div>
                 )}
               </React.Fragment>
             ))}
