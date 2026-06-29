@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 
 const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
@@ -163,12 +163,10 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
 
     const gridWrap = document.createElement('div');
     gridWrap.style.cssText = 'display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;margin:1rem 0;';
-    for (let i = 0; i < 5; i++) {
-      const cell = document.createElement('div');
-      cell.style.cssText = 'width:300px;height:250px;';
-      cell.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
-      gridWrap.appendChild(cell);
-    }
+    const cell = document.createElement('div');
+    cell.style.cssText = 'width:300px;height:250px;';
+    cell.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
+    gridWrap.appendChild(cell);
     container.appendChild(gridWrap);
   }, [loading]);
 
@@ -250,6 +248,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
           "url":"https://bd-viral-hub.vercel.app","description":"বাংলাদেশের সেরা ভাইরাল ভিডিও সাইট",
           "potentialAction":{"@type":"SearchAction","target":"https://bd-viral-hub.vercel.app/search?q={search_term_string}","query-input":"required name=search_term_string"}
         })}} />
+        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js"></script>
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -365,30 +364,38 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
             {paginated.length === 0 ? (
               <div className="empty">🎬 No videos found.</div>
             ) : paginated.map((v, i) => (
-              <a key={v.id} className="video-card" href={`/video/${v.slug}`}>
-                <div className="thumb-wrap">
-                  <img
-                    src={v.thumbnail}
-                    alt={`${v.title} - ভাইরাল ভিডিও বাংলাদেশ`}
-                    loading={i < 6 ? 'eager' : 'lazy'}
-                    onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/640/360`; }}
-                  />
-                  <div className="play-btn">
-                    <svg viewBox="0 0 80 80" fill="none">
-                      <circle cx="40" cy="40" r="38" fill="rgba(255,61,61,0.9)" />
-                      <polygon points="32,24 60,40 32,56" fill="white" />
-                    </svg>
+              <React.Fragment key={v.id}>
+                <a className="video-card" href={`/video/${v.slug}`}>
+                  <div className="thumb-wrap">
+                    <img
+                      src={v.thumbnail}
+                      alt={`${v.title} - ভাইরাল ভিডিও বাংলাদেশ`}
+                      loading={i < 6 ? 'eager' : 'lazy'}
+                      onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/640/360`; }}
+                    />
+                    <div className="play-btn">
+                      <svg viewBox="0 0 80 80" fill="none">
+                        <circle cx="40" cy="40" r="38" fill="rgba(255,61,61,0.9)" />
+                        <polygon points="32,24 60,40 32,56" fill="white" />
+                      </svg>
+                    </div>
+                    {v.duration && <span className="duration-badge">{v.duration}</span>}
                   </div>
-                  {v.duration && <span className="duration-badge">{v.duration}</span>}
-                </div>
-                <div className="card-info">
-                  <div className="card-title">{v.title}</div>
-                  <div className="card-meta">
-                    <span className="cat-badge">{v.category}</span>
-                    <span>👁 {formatNum(views[v.id] || 0)}</span>
+                  <div className="card-info">
+                    <div className="card-title">{v.title}</div>
+                    <div className="card-meta">
+                      <span className="cat-badge">{v.category}</span>
+                      <span>👁 {formatNum(views[v.id] || 0)}</span>
+                    </div>
                   </div>
-                </div>
-              </a>
+                </a>
+                {(i + 1) % 15 === 0 && (
+                  <div style={{gridColumn:'1/-1',margin:'0.5rem 0',display:'flex',justifyContent:'center'}}>
+                    <script async={true} data-cfasync="false" src="https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js"></script>
+                    <div id={`container-e3988ef0a3824ff9822566414d9bbdff-home-${Math.floor((i+1)/15)}`}></div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
           </div>
         )}
