@@ -71,15 +71,15 @@ export default function VideoPage({ video, related }) {
 
   // Interstitial overlay states
   const [showInterstitial, setShowInterstitial] = useState(false);
-  const [interstitialTimer, setInterstitialTimer] = useState(15);
+  const [interstitialTimer, setInterstitialTimer] = useState(11);
   const [canSkip, setCanSkip] = useState(false);
 
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
 
-  // Direct link for the interstitial overlay (Adcash)
-  const INTERSTITIAL_LINK = 'https://www.effectivecpmnetwork.com/vtfcw2wp?key=3f19233a3f7fd2fbe42a2cc2303a1ebf';
+  // Direct link for the interstitial overlay
+  const INTERSTITIAL_LINK = 'https://omg10.com/4/11207341';
   const INTERSTITIAL_DELAY_MS = 150000; // 2.5 minutes - shows during video playback
-  const SKIP_AFTER_SECONDS = 15;
+  const SKIP_AFTER_SECONDS = 11;
 
   function handleOverlayClick() {
     window.open(SMARTLINK_URL, '_blank');
@@ -159,11 +159,11 @@ atOptions = {
       return iframe;
     }
 
-    ['ad-banner-top', 'ad-banner-top-desktop', 'ad-banner-bottom'].forEach(id => {
+    ['ad-banner-bottom-1', 'ad-banner-bottom-2', 'ad-banner-mid'].forEach(id => {
       const container = document.getElementById(id);
       if (!container || container.dataset.loaded) return;
       container.dataset.loaded = 'true';
-      container.appendChild(buildAdIframe('5adf6dca592b0a84d1333f77bd5c167c', 728, 90));
+      container.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
     });
   }, [video.id]);
 
@@ -233,6 +233,7 @@ atOptions = {
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js"></script>
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -372,9 +373,13 @@ atOptions = {
               <button className="action-btn share-btn" onClick={shareVideo}>🔗 Share</button>
             </div>
 
+            {/* 300x250 Banner Ad - below player, above related */}
+            <div style={{display:'flex',justifyContent:'center',margin:'1rem 0'}}>
+              <div className="ad-banner-slot" id="ad-banner-mid"></div>
+            </div>
+
             {/* Mobile related */}
             <div className="related-mobile">
-              <div className="ad-banner-slot" id="ad-banner-top"></div>
               <div className="related-section-title">Related Videos</div>
               <div className="related-list">
                 {related.length === 0 ? (
@@ -396,7 +401,6 @@ atOptions = {
 
           {/* Desktop sidebar */}
           <div className="related-sidebar">
-            <div className="ad-banner-slot" id="ad-banner-top-desktop"></div>
             <div className="related-section-title">Related Videos</div>
             <div className="related-list">
               {related.length === 0 ? (
@@ -416,20 +420,15 @@ atOptions = {
           </div>
         </div>
 
-        {/* Native Banner Ad 1 */}
-        <div style={{margin:'1rem 0'}}>
-          <script async={true} data-cfasync="false" src="https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js"></script>
-          <div id="container-e3988ef0a3824ff9822566414d9bbdff"></div>
+        {/* 300x250 Banner Ad - below related videos */}
+        <div style={{display:'flex',justifyContent:'center',margin:'1rem 0'}}>
+          <div className="ad-banner-slot" id="ad-banner-bottom-1"></div>
         </div>
 
-        {/* Native Banner Ad 2 */}
-        <div style={{margin:'1rem 0'}}>
-          <script async={true} data-cfasync="false" src="https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js"></script>
-          <div id="container-e3988ef0a3824ff9822566414d9bbdff-2"></div>
+        {/* 300x250 Banner Ad - second one below related videos */}
+        <div style={{display:'flex',justifyContent:'center',margin:'1rem 0'}}>
+          <div className="ad-banner-slot" id="ad-banner-bottom-2"></div>
         </div>
-
-        {/* 728x90 Banner Ad - below native banners */}
-        <div className="ad-banner-slot" id="ad-banner-bottom"></div>
 
       </div>
 
