@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Head from "next/head";
 
 const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
 const PER_PAGE = 30;
 
-// Smartlink URL — iframe এর ভেতরে লোড হবে, window.open() নেই
-const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
-
-const FIRST_SHOW_MS  = 10000;  // পেজ লোডের ১০ সেকেন্ড পর প্রথমবার
-const REPEAT_MS      = 120000; // তারপর প্রতি ২ মিনিট পর
-const SKIP_AFTER_SEC = 10;     // ১০ সেকেন্ড পর skip দেখাবে
+// mbidadm ad script — page load এর ১৫ সেকেন্ড পর inject হবে
+const AD_SCRIPT_SRC   = 'https://js.mbidadm.com/static/scripts.js';
+const AD_SCRIPT_PID   = '446921';
+const FIRST_SHOW_MS   = 15000; // পেজ লোডের ১৫ সেকেন্ড পর
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -70,13 +68,6 @@ export default function Home({ initialVideos }) {
   const [error, setError]           = useState('');
   const [views, setViews]           = useState({});
 
-  // Interstitial states
-  const [showAd, setShowAd]         = useState(false);
-  const [adTimer, setAdTimer]       = useState(SKIP_AFTER_SEC);
-  const [canSkip, setCanSkip]       = useState(false);
-
-  const repeatTimerRef = useRef(null);
-
   useEffect(() => {
     try {
       const v = JSON.parse(localStorage.getItem('vhub_views') || '{}');
@@ -93,50 +84,19 @@ export default function Home({ initialVideos }) {
     document.body.appendChild(s);
   }, []);
 
-  // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
+  // ── mbidadm ad script — ১৫ সেকেন্ড পর inject, একবারই ──
   useEffect(() => {
-    const firstTimer = setTimeout(() => {
-      openAd();
+    const t = setTimeout(() => {
+      if (document.querySelector(`script[src="${AD_SCRIPT_SRC}"]`)) return;
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = AD_SCRIPT_SRC;
+      s.setAttribute('data-admpid', AD_SCRIPT_PID);
+      document.body.appendChild(s);
     }, FIRST_SHOW_MS);
 
-    return () => clearTimeout(firstTimer);
-  }, []);
-
-  function openAd() {
-    setShowAd(true);
-    setAdTimer(SKIP_AFTER_SEC);
-    setCanSkip(false);
-  }
-
-  function closeAd() {
-    setShowAd(false);
-    // skip করার পর ২ মিনিট পর আবার দেখাবে
-    clearTimeout(repeatTimerRef.current);
-    repeatTimerRef.current = setTimeout(() => {
-      openAd();
-    }, REPEAT_MS);
-  }
-
-  // ── player page থেকে ব্যাক করলে একবার দেখাও ──
-  useEffect(() => {
-    const handlePageShow = (e) => { if (e.persisted) openAd(); };
-    window.addEventListener('pageshow', handlePageShow);
-    return () => {
-      window.removeEventListener('pageshow', handlePageShow);
-      clearTimeout(repeatTimerRef.current);
-    };
-  }, []);
-
-  // ── Skip countdown ──
-  useEffect(() => {
-    if (!showAd) return;
-    if (adTimer <= 0) {
-      setCanSkip(true);
-      return;
-    }
-    const t = setTimeout(() => setAdTimer(n => n - 1), 1000);
     return () => clearTimeout(t);
-  }, [showAd, adTimer]);
+  }, []);
 
   // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
@@ -316,28 +276,6 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
             position:fixed !important;bottom:0 !important;top:auto !important;
             left:0 !important;width:100% !important;z-index:9999 !important;
           }
-          /* ── Interstitial — player page এর মতোই ── */
-          .interstitial-overlay{
-            position:fixed;top:0;left:0;
-            width:100vw;height:100vh;
-            background:#000;z-index:99999;
-          }
-          .interstitial-overlay iframe{
-            width:100%;height:100%;border:none;
-          }
-          .interstitial-bar{
-            position:absolute;top:0;left:0;right:0;
-            height:40px;background:rgba(0,0,0,0.75);
-            display:flex;align-items:center;justify-content:flex-end;
-            padding:0 12px;z-index:100000;
-          }
-          .interstitial-timer{
-            color:#fff;font-size:0.85rem;font-family:'DM Sans',sans-serif;
-          }
-          .interstitial-skip{
-            color:var(--accent);font-weight:700;font-size:0.95rem;
-            cursor:pointer;font-family:'DM Sans',sans-serif;
-          }
         `}</style>
       </Head>
 
@@ -466,20 +404,6 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
           </div>
         </div>
       </footer>
-
-      {/* ── Interstitial Overlay — player page এর মতো একই system ── */}
-      {showAd && (
-        <div className="interstitial-overlay">
-          <div className="interstitial-bar">
-            {!canSkip ? (
-              <span className="interstitial-timer">{adTimer}</span>
-            ) : (
-              <span className="interstitial-skip" onClick={closeAd}>skip ✕</span>
-            )}
-          </div>
-          <iframe src={SMARTLINK_URL} />
-        </div>
-      )}
     </>
   );
-  }
+    }
