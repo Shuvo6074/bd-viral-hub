@@ -37,12 +37,26 @@ function slugifySSR(text) {
     .substring(0, 80);
 }
 
+// একই টাইটেল বারবার এলে slug-এর শেষে -2, -3 ... যোগ হবে, যাতে প্রতিটা
+// ভিডিওর নিজস্ব আলাদা URL থাকে। sitemap.js আর [slug].js-এও এই একই
+// লজিক ব্যবহার করা হয়েছে, তাই সব জায়গায় slug মিলে যাবে।
+function getUniqueSlugs(rows, slugifyFn) {
+  const counts = {};
+  return rows.map(row => {
+    const base = slugifyFn(row.c[0]?.v || 'video');
+    counts[base] = (counts[base] || 0) + 1;
+    return counts[base] > 1 ? `${base}-${counts[base]}` : base;
+  });
+}
+
 export async function getServerSideProps() {
   try {
     const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_SSR}/gviz/tq?tqx=out:json`);
     const text = await res.text();
     const json = JSON.parse(text.substring(47, text.length - 2));
-    const initialVideos = json.table.rows.map((row, i) => ({
+    const rows = json.table.rows;
+    const uniqueSlugs = getUniqueSlugs(rows, slugifySSR);
+    const initialVideos = rows.map((row, i) => ({
       id: i,
       title:       row.c[0]?.v || 'Untitled',
       videoUrl:    row.c[1]?.v || '',
@@ -51,7 +65,7 @@ export async function getServerSideProps() {
       date:        row.c[4]?.v || '',
       duration:    row.c[5]?.v || '',
       description: row.c[6]?.v || '',
-      slug:        slugifySSR(row.c[0]?.v || 'video')
+      slug:        uniqueSlugs[i]
     })).filter(v => v.title !== 'Title').reverse();
     return { props: { initialVideos } };
   } catch(e) {
@@ -181,7 +195,9 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       const res  = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
       const text = await res.text();
       const json = JSON.parse(text.substring(47, text.length - 2));
-      const videos = json.table.rows.map((row, i) => ({
+      const rows = json.table.rows;
+      const uniqueSlugs = getUniqueSlugs(rows, slugify);
+      const videos = rows.map((row, i) => ({
         id: i,
         title:       row.c[0]?.v || 'Untitled',
         videoUrl:    row.c[1]?.v || '',
@@ -190,7 +206,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         date:        row.c[4]?.v || '',
         duration:    row.c[5]?.v || '',
         description: row.c[6]?.v || '',
-        slug:        slugify(row.c[0]?.v || 'video')
+        slug:        uniqueSlugs[i]
       })).filter(v => v.title !== 'Title').reverse();
 
       setCats([...new Set(videos.map(v => v.category))]);
@@ -493,4 +509,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       )}
     </>
   );
-         }
+}
