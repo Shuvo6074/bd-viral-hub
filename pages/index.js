@@ -432,6 +432,17 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         )}
 
         <div id="ad-bottom-container"></div>
+
+        {/* ── SEO: হিডেন লিংক ব্লক ──
+             পেজিনেশন client-side state দিয়ে চলে বলে সার্ভার-রেন্ডারড HTML-এ
+             শুধু বর্তমান পেজের ভিডিও লিংকই থাকে। Googlebot যাতে হোমপেজ থেকেই
+             সব ভিডিওর লিংক খুঁজে পায় (sitemap ছাড়াও), তাই সব ভিডিওর <a href>
+             এখানে রাখা হলো — ভিজুয়ালি hidden কিন্তু HTML-এ উপস্থিত, তাই crawlable। */}
+        <div style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }} aria-hidden="true">
+          {initialVideos.map(v => (
+            <a key={`seo-link-${v.id}`} href={`/video/${v.slug}`}>{v.title}</a>
+          ))}
+        </div>
       </div>
 
       <footer>
@@ -482,4 +493,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       )}
     </>
   );
-      }
+         }
