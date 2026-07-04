@@ -13,8 +13,29 @@ export default function Sitemap() { return null; }
 
 export async function getServerSideProps({ res }) {
   const siteUrl = 'https://bd-viral-hub.vercel.app';
+
+  // fallback sitemap — শুধু হোমপেজ থাকবে, কিন্তু সবসময় valid XML
+  const fallbackSitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+      <loc>${siteUrl}</loc>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+    </url>
+</urlset>`;
+
   try {
-    const response = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
+    // ৮ সেকেন্ডের বেশি সময় নিলে Google Sheets fetch বাতিল করে দাও,
+    // যাতে Googlebot-এর টাইমআউটের আগেই একটা রেসপন্স পাঠানো যায়
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const response = await fetch(
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+
     const text = await response.text();
     const json = JSON.parse(text.substring(47, text.length - 2));
     const rows = json.table.rows;
@@ -51,11 +72,15 @@ export async function getServerSideProps({ res }) {
 </urlset>`;
 
     res.setHeader('Content-Type', 'application/xml');
-    res.setHeader('Cache-Control', 'public, s-maxage=600');  // 10 মিনিট cache
+    res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
     res.write(sitemap);
     res.end();
   } catch(e) {
-    res.write('Error');
+    // Google Sheets fetch fail করলেও Googlebot যেন সবসময় VALID XML পায় —
+    // "Error" টেক্সট পাঠানো বন্ধ, কারণ সেটাই "Couldn't fetch" এর আসল কারণ ছিল
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, s-maxage=60');  // দ্রুত retry হোক
+    res.write(fallbackSitemap);
     res.end();
   }
   return { props: {} };
