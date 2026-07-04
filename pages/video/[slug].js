@@ -20,6 +20,18 @@ function formatNum(n) {
   return n.toString();
 }
 
+// একই টাইটেল বারবার এলে slug-এর শেষে -2, -3 ... যোগ হবে, যাতে প্রতিটা
+// ভিডিওর নিজস্ব আলাদা URL থাকে। index.js আর sitemap.js-এও এই একই
+// লজিক ব্যবহার করা হয়েছে, তাই সব জায়গায় slug মিলে যাবে।
+function getUniqueSlugs(rows, slugifyFn) {
+  const counts = {};
+  return rows.map(row => {
+    const base = slugifyFn(row.c[0]?.v || 'video');
+    counts[base] = (counts[base] || 0) + 1;
+    return counts[base] > 1 ? `${base}-${counts[base]}` : base;
+  });
+}
+
 function getEmbedUrl(url) {
   if (!url) return '';
   if (url.includes('archive.org/embed/')) return url;
@@ -39,6 +51,7 @@ export async function getServerSideProps({ params }) {
     const text = await res.text();
     const json = JSON.parse(text.substring(47, text.length - 2));
     const rows = json.table.rows;
+    const uniqueSlugs = getUniqueSlugs(rows, slugify);
 
     const allVideos = rows.map((row, i) => ({
       id: i,
@@ -49,7 +62,7 @@ export async function getServerSideProps({ params }) {
       date:        row.c[4]?.v || '',
       duration:    row.c[5]?.v || '',
       description: row.c[6]?.v || '',
-      slug:        slugify(row.c[0]?.v || 'video')
+      slug:        uniqueSlugs[i]
     })).filter(v => v.title !== 'Title').reverse();
 
     const video = allVideos.find(v => v.slug === params.slug);
@@ -447,4 +460,4 @@ atOptions = {
       )}
     </>
   );
-  }
+    }
