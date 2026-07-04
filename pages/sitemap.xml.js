@@ -20,18 +20,18 @@ export async function getServerSideProps({ res }) {
     const rows = json.table.rows;
     const today = new Date().toISOString().split('T')[0];
 
-    const videos = rows.map(row => ({
-      title: row.c[0]?.v || 'video',
-      slug: slugify(row.c[0]?.v || 'video')
-    })).filter(v => v.title !== 'Title' && v.slug.length > 2);
+    // একই টাইটেল বারবার এলে slug-এর শেষে -2, -3 ... যোগ হবে,
+    // যাতে প্রতিটা ভিডিওর নিজস্ব আলাদা URL থাকে (কোনোটাই বাদ পড়বে না)
+    const slugCounts = {};
+    const videos = rows.map(row => {
+      const title = row.c[0]?.v || 'video';
+      const baseSlug = slugify(title);
+      slugCounts[baseSlug] = (slugCounts[baseSlug] || 0) + 1;
+      const slug = slugCounts[baseSlug] > 1 ? `${baseSlug}-${slugCounts[baseSlug]}` : baseSlug;
+      return { title, slug };
+    }).filter(v => v.title !== 'Title' && v.slug.length > 2);
 
-    // Duplicate slug বাদ দেওয়া
-    const seen = new Set();
-    const uniqueVideos = videos.filter(v => {
-      if (seen.has(v.slug)) return false;
-      seen.add(v.slug);
-      return true;
-    });
+    const uniqueVideos = videos;
 
     const urls = uniqueVideos.map(v => `
     <url>
