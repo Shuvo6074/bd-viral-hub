@@ -32,6 +32,11 @@ function getUniqueSlugs(rows, slugifyFn) {
   });
 }
 
+// ⚠️ ভিউ কাউন্ট এখন Google Form-এর মাধ্যমে জমা হয় (Apps Script লাগে না)
+const VIEW_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScWpnit1sXMbza8XgWmdVV065Y6oYFC9zWEu7i0tGBoQW0S8w/formResponse';
+const VIEW_FORM_ENTRY = 'entry.1785504240';
+const VIEW_RESPONSES_SHEET_ID = '1-y075MwICFApp4D6Ie-7FxDNVl-pkJHpQSiu396nQoI';
+
 function getEmbedUrl(url) {
   if (!url) return '';
   if (url.includes('archive.org/embed/')) return url;
@@ -82,17 +87,7 @@ export default function VideoPage({ video, related }) {
   const [liked, setLiked] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
-  // Interstitial overlay states
-  const [showInterstitial, setShowInterstitial] = useState(false);
-  const [interstitialTimer, setInterstitialTimer] = useState(11);
-  const [canSkip, setCanSkip] = useState(false);
-
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
-
-  // Direct link for the interstitial overlay
-  const INTERSTITIAL_LINK = 'https://omg10.com/4/11207341';
-  const INTERSTITIAL_DELAY_MS = 60000; // 1 minute - shows during video playback
-  const SKIP_AFTER_SECONDS = 11;
 
   function handleOverlayClick() {
     window.open(SMARTLINK_URL, '_blank');
@@ -105,44 +100,43 @@ export default function VideoPage({ video, related }) {
     setTimeout(() => { window.location.href = `/video/${slug}`; }, 50);
   }
 
-  function closeInterstitial() {
-    setShowInterstitial(false);
-  }
-
   useEffect(() => {
     try {
       const l = JSON.parse(localStorage.getItem('vhub_likes') || '{}');
-      const v = JSON.parse(localStorage.getItem('vhub_views') || '{}');
       setLikes(l);
-      setViews(v);
       setLiked(!!l[video.id]);
-      v[video.id] = (v[video.id] || 0) + 1;
-      localStorage.setItem('vhub_views', JSON.stringify(v));
-      setViews({ ...v });
     } catch(e) {}
 
-    // Interstitial overlay: show after a delay on every video page visit
-    const interstitialDelayTimer = setTimeout(() => {
-      setShowInterstitial(true);
-      setInterstitialTimer(SKIP_AFTER_SECONDS);
-      setCanSkip(false);
-    }, INTERSTITIAL_DELAY_MS);
+    // ── ভিউ কাউন্ট: প্রতিবার পেজ খুললে এই ভিডিওর slug একটা Google Form-এ
+    // জমা (submit) হয়। এটাই একটা "ভিউ" হিসেবে গণনা হয়। সব ভিজিটরের
+    // জমা একই Response Sheet-এ গিয়ে জমা হয়, তাই এটা সবার জন্য COMMON,
+    // real সংখ্যা — localStorage-এর মতো নিজের ব্রাউজারে সীমাবদ্ধ না। ──
+    try {
+      const formData = new URLSearchParams();
+      formData.append(VIEW_FORM_ENTRY, video.slug);
+      fetch(VIEW_FORM_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Google Form নিজে থেকেই এটা require করে, রেসপন্স পড়া যায় না কিন্তু submit ঠিকই হয়
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+      }).catch(() => {});
+    } catch(e) {}
 
-    return () => {
-      clearTimeout(interstitialDelayTimer);
-    };
+    // Response Sheet থেকে সব ভিডিওর মোট ভিউ (কতবার প্রতিটা slug জমা
+    // পড়েছে) গুনে আনা — homepage/related section-এ real সংখ্যা দেখানোর জন্য
+    fetch(`https://docs.google.com/spreadsheets/d/${VIEW_RESPONSES_SHEET_ID}/gviz/tq?tqx=out:json`)
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        const counts = {};
+        json.table.rows.forEach(row => {
+          const s = row.c[1]?.v; // কলাম B = slug
+          if (s) counts[s] = (counts[s] || 0) + 1;
+        });
+        setViews(counts);
+      })
+      .catch(() => {});
   }, [video.id]);
-
-  // Countdown for the interstitial overlay skip button
-  useEffect(() => {
-    if (!showInterstitial) return;
-    if (interstitialTimer <= 0) {
-      setCanSkip(true);
-      return;
-    }
-    const t = setTimeout(() => setInterstitialTimer(s => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [showInterstitial, interstitialTimer]);
 
   // Inject highperformanceformat.com 728x90 banner ads (isolated iframe, runs twice)
   useEffect(() => {
@@ -292,43 +286,6 @@ atOptions = {
           .related-mobile{display:none;}
           .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;overflow:hidden;}
           .ad-banner-slot iframe{max-width:100%;}
-
-          /* Interstitial overlay */
-          .interstitial-overlay{
-            position:fixed;
-            top:0; left:0;
-            width:100vw; height:100vh;
-            background:#000;
-            z-index:99999;
-          }
-          .interstitial-overlay iframe{
-            width:100%;
-            height:100%;
-            border:none;
-          }
-          .interstitial-bar{
-            position:absolute;
-            top:0; left:0; right:0;
-            height:40px;
-            background:rgba(0,0,0,0.75);
-            display:flex;
-            align-items:center;
-            justify-content:flex-end;
-            padding:0 12px;
-            z-index:100000;
-          }
-          .interstitial-timer{
-            color:#fff;
-            font-size:0.85rem;
-            font-family:'DM Sans',sans-serif;
-          }
-          .interstitial-skip{
-            color:var(--accent);
-            font-weight:700;
-            font-size:0.95rem;
-            cursor:pointer;
-            font-family:'DM Sans',sans-serif;
-          }
         `}</style>
       </Head>
 
@@ -368,7 +325,7 @@ atOptions = {
             <h1 className="video-title-big">{video.title}</h1>
 
             <div className="video-stats-row">
-              <span>👁 {formatNum(views[video.id] || 0)} views</span>
+              <span>👁 {formatNum(views[video.slug] || 0)} views</span>
               <span>❤️ {formatNum(likes[video.id] || 0)} likes</span>
               <span>📁 {video.category}</span>
               {video.date && <span>📅 {video.date}</span>}
@@ -404,7 +361,7 @@ atOptions = {
                     </div>
                     <div className="related-info">
                       <div className="related-title-text">{v.title}</div>
-                      <div className="related-meta">👁 {formatNum(views[v.id] || 0)} · {v.category}</div>
+                      <div className="related-meta">👁 {formatNum(views[v.slug] || 0)} · {v.category}</div>
                     </div>
                   </a>
                 ))}
@@ -425,7 +382,7 @@ atOptions = {
                   </div>
                   <div className="related-info">
                     <div className="related-title-text">{v.title}</div>
-                    <div className="related-meta">👁 {formatNum(views[v.id] || 0)} · {v.category}</div>
+                    <div className="related-meta">👁 {formatNum(views[v.slug] || 0)} · {v.category}</div>
                   </div>
                 </a>
               ))}
@@ -444,20 +401,6 @@ atOptions = {
         </div>
 
       </div>
-
-      {/* Interstitial overlay - shows after user watches for a while */}
-      {showInterstitial && (
-        <div className="interstitial-overlay">
-          <div className="interstitial-bar">
-            {!canSkip ? (
-              <span className="interstitial-timer">{interstitialTimer}</span>
-            ) : (
-              <span className="interstitial-skip" onClick={closeInterstitial}>skip ✕</span>
-            )}
-          </div>
-          <iframe src={INTERSTITIAL_LINK} />
-        </div>
-      )}
     </>
   );
-    }
+  }
