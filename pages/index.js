@@ -26,7 +26,28 @@ function formatNum(n) {
   return n.toString();
 }
 
+// ── পারফরম্যান্স ফিক্স: থাম্বনেইল সরাসরি মূল সোর্স (Google Drive ইত্যাদি)
+// থেকে না এনে, একটা ফ্রি image-resizing/caching proxy (images.weserv.nl)
+// দিয়ে ছোট, optimized সাইজে আনা হচ্ছে — লোড অনেক দ্রুত হবে। এটা শুধু
+// ছবি দেখানোর পদ্ধতি বদলাচ্ছে, ডেটা/লজিকের কিছুই বদলাচ্ছে না। ──
+function thumbUrl(url, width) {
+  if (!url) return url;
+  const clean = url.replace(/^https?:\/\//, '');
+  return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
+}
+
+// একটা ভিডিও একাধিক ক্যাটাগরিতে থাকতে পারবে — Sheets-এ কমা (,) দিয়ে
+// আলাদা করে লিখলেই (যেমন "General, Bangladeshi") ভিডিওটা দুই জায়গাতেই দেখাবে
+function parseCategories(str) {
+  const arr = (str || '').split(',').map(s => s.trim()).filter(Boolean);
+  return arr.length ? arr : ['General'];
+}
+
 const SHEET_ID_SSR = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
+
+// ⚠️ [slug].js পেজে ব্যবহৃত একই Google Form Response Sheet, ভিউ কাউন্ট
+// একই জায়গা থেকে পড়ার জন্য (যাতে হোমপেজ ও ভিডিও পেজে সংখ্যা মেলে)
+const VIEW_RESPONSES_SHEET_ID = '1-y075MwICFApp4D6Ie-7FxDNVl-pkJHpQSiu396nQoI';
 
 function slugifySSR(text) {
   return text.toString().toLowerCase()
@@ -49,7 +70,14 @@ function getUniqueSlugs(rows, slugifyFn) {
   });
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ res: httpRes }) {
+  // ── পারফরম্যান্স ফিক্স: পেজটা Vercel-এর Edge-এ ৬০ সেকেন্ডের জন্য cache
+  // হবে। এই সময়ের মধ্যে আসা সব ভিজিটর সরাসরি cached, দ্রুত পেজ পাবে —
+  // প্রতিবার নতুন করে Google Sheets fetch করতে হবে না। ডেটা বদলালে
+  // (নতুন ভিডিও যোগ হলে) সর্বোচ্চ ৬০ সেকেন্ড দেরিতে দেখাবে, এটা নিয়ে
+  // চিন্তার কিছু নেই — বাকি সব লজিক আগের মতোই অপরিবর্তিত। ──
+  httpRes.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
   try {
     const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID_SSR}/gviz/tq?tqx=out:json`);
     const text = await res.text();
@@ -61,12 +89,13 @@ export async function getServerSideProps() {
       title:       row.c[0]?.v || 'Untitled',
       videoUrl:    row.c[1]?.v || '',
       thumbnail:   row.c[2]?.v || `https://picsum.photos/seed/${i}/640/360`,
-      category:    row.c[3]?.v || 'General',
+      categories:  parseCategories(row.c[3]?.v),
       date:        row.c[4]?.v || '',
       duration:    row.c[5]?.v || '',
       description: row.c[6]?.v || '',
       slug:        uniqueSlugs[i]
-    })).filter(v => v.title !== 'Title').reverse();
+    })).filter(v => v.title !== 'Title').reverse()
+      .map((v, idx) => ({ ...v, pageBatch: Math.floor(idx / PER_PAGE) + 1 }));
     return { props: { initialVideos } };
   } catch(e) {
     return { props: { initialVideos: [] } };
@@ -79,7 +108,7 @@ export default function Home({ initialVideos }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQ, setSearchQ]       = useState('');
   const [activeCat, setActiveCat]   = useState('all');
-  const [cats, setCats]             = useState([...new Set(initialVideos.map(v => v.category))]);
+  const [cats, setCats]             = useState([...new Set(initialVideos.flatMap(v => v.categories))]);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
   const [views, setViews]           = useState({});
@@ -92,10 +121,21 @@ export default function Home({ initialVideos }) {
   const repeatTimerRef = useRef(null);
 
   useEffect(() => {
-    try {
-      const v = JSON.parse(localStorage.getItem('vhub_views') || '{}');
-      setViews(v);
-    } catch(e) {}
+    // ── ভিউ কাউন্ট: [slug].js পেজের মতোই একই Response Sheet থেকে
+    // সব ভিডিওর ভিউ (slug অনুযায়ী গোনা) নিয়ে আসা হচ্ছে, যাতে হোমপেজের
+    // কার্ডেও ভিডিও পেজের সাথে মিলিয়ে সঠিক, common ভিউ সংখ্যা দেখায় ──
+    fetch(`https://docs.google.com/spreadsheets/d/${VIEW_RESPONSES_SHEET_ID}/gviz/tq?tqx=out:json`)
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substring(47, text.length - 2));
+        const counts = {};
+        json.table.rows.forEach(row => {
+          const s = row.c[1]?.v; // কলাম B = slug
+          if (s) counts[s] = (counts[s] || 0) + 1;
+        });
+        setViews(counts);
+      })
+      .catch(() => {});
   }, []);
 
   // ── Social Bar Ad inject — একবার inject, remove করা হবে না ──
@@ -202,14 +242,15 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         title:       row.c[0]?.v || 'Untitled',
         videoUrl:    row.c[1]?.v || '',
         thumbnail:   row.c[2]?.v || `https://picsum.photos/seed/${i}/640/360`,
-        category:    row.c[3]?.v || 'General',
+        categories:  parseCategories(row.c[3]?.v),
         date:        row.c[4]?.v || '',
         duration:    row.c[5]?.v || '',
         description: row.c[6]?.v || '',
         slug:        uniqueSlugs[i]
-      })).filter(v => v.title !== 'Title').reverse();
+      })).filter(v => v.title !== 'Title').reverse()
+        .map((v, idx) => ({ ...v, pageBatch: Math.floor(idx / PER_PAGE) + 1 }));
 
-      setCats([...new Set(videos.map(v => v.category))]);
+      setCats([...new Set(videos.flatMap(v => v.categories))]);
       setAllVideos(videos);
       setFiltered(videos);
       setLoading(false);
@@ -224,7 +265,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
     setCurrentPage(1);
     const q = searchQ.toLowerCase();
     setFiltered(allVideos.filter(v =>
-      (cat === 'all' || v.category === cat) &&
+      (cat === 'all' || v.categories.includes(cat)) &&
       (!q || v.title.toLowerCase().includes(q))
     ));
   }
@@ -233,7 +274,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
     setSearchQ(q);
     setCurrentPage(1);
     setFiltered(allVideos.filter(v =>
-      (activeCat === 'all' || v.category === activeCat) &&
+      (activeCat === 'all' || v.categories.includes(activeCat)) &&
       (!q || v.title.toLowerCase().includes(q.toLowerCase()))
     ));
   }
@@ -389,7 +430,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
                 <a className="video-card" href={`/video/${v.slug}`}>
                   <div className="thumb-wrap">
                     <img
-                      src={v.thumbnail}
+                      src={thumbUrl(v.thumbnail, 400)}
                       alt={`${v.title} - ভাইরাল ভিডিও বাংলাদেশ`}
                       loading={i < 6 ? 'eager' : 'lazy'}
                       onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/640/360`; }}
@@ -405,8 +446,8 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
                   <div className="card-info">
                     <div className="card-title">{v.title}</div>
                     <div className="card-meta">
-                      <span className="cat-badge">{v.category}</span>
-                      <span>👁 {formatNum(views[v.id] || 0)}</span>
+                      <span className="cat-badge">{v.categories.join(', ')}</span>
+                      <span>👁 {formatNum(views[v.slug] || 0)}</span>
                     </div>
                   </div>
                 </a>
@@ -509,4 +550,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       )}
     </>
   );
-}
+    }
