@@ -151,6 +151,16 @@ export default function Home({ initialVideos }) {
     document.body.appendChild(s);
   }, []);
 
+  // ── ProfitOn Shuffle Box Ad inject — একবার inject, remove করা হবে না ──
+  useEffect(() => {
+    if (document.querySelector('script[src*="shUHBC6CD6Vpm"]')) return;
+    const s = document.createElement('script');
+    s.src = '//lb.acoupfoughty.com/shUHBC6CD6Vpm/146126';
+    s.async = true;
+    s.setAttribute('data-cfasync', 'false');
+    document.body.appendChild(s);
+  }, []);
+
   // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
   useEffect(() => {
     const firstTimer = setTimeout(() => {
