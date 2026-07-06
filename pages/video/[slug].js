@@ -20,12 +20,13 @@ function formatNum(n) {
   return n.toString();
 }
 
-// ── পারফরম্যান্স ফিক্স: index.js-এর মতোই থাম্বনেইল একটা free
-// image-proxy (images.weserv.nl) দিয়ে ছোট/optimized সাইজে দ্রুত লোড ──
+// ── থাম্বনেইল ফিক্স: index.js-এর মতোই images.weserv.nl-এর বদলে
+// wsrv.nl (নতুন ডোমেইন) ব্যবহার করা হচ্ছে — পুরনো ডোমেইনে রিকোয়েস্ট
+// ফেইল করছিল বলে কোনো থাম্বনেইলই (related সহ) দেখাচ্ছিল না। ──
 function thumbUrl(url, width) {
   if (!url) return url;
   const clean = url.replace(/^https?:\/\//, '');
-  return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
+  return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
 }
 
 // index.js-এর PER_PAGE-এর সাথে অবশ্যই মিলতে হবে, নাহলে pageBatch নম্বর গরমিল হবে
@@ -393,7 +394,19 @@ atOptions = {
                 ) : related.map(v => (
                   <a key={v.id} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                     <div className="related-thumb">
-                      <img src={thumbUrl(v.thumbnail, 320)} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
+                      <img
+                        src={thumbUrl(v.thumbnail, 320)}
+                        alt={v.title}
+                        loading="lazy"
+                        onError={e => {
+                          if (e.target.dataset.fallback !== 'original' && v.thumbnail) {
+                            e.target.dataset.fallback = 'original';
+                            e.target.src = v.thumbnail;
+                          } else {
+                            e.target.src = `https://picsum.photos/seed/${v.id}/320/180`;
+                          }
+                        }}
+                      />
                     </div>
                     <div className="related-info">
                       <div className="related-title-text">{v.title}</div>
@@ -414,7 +427,19 @@ atOptions = {
               ) : related.map(v => (
                 <a key={v.id} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                   <div className="related-thumb">
-                    <img src={thumbUrl(v.thumbnail, 320)} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
+                    <img
+                      src={thumbUrl(v.thumbnail, 320)}
+                      alt={v.title}
+                      loading="lazy"
+                      onError={e => {
+                        if (e.target.dataset.fallback !== 'original' && v.thumbnail) {
+                          e.target.dataset.fallback = 'original';
+                          e.target.src = v.thumbnail;
+                        } else {
+                          e.target.src = `https://picsum.photos/seed/${v.id}/320/180`;
+                        }
+                      }}
+                    />
                   </div>
                   <div className="related-info">
                     <div className="related-title-text">{v.title}</div>
@@ -439,4 +464,4 @@ atOptions = {
       </div>
     </>
   );
-            }
+      }
