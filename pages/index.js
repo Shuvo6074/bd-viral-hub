@@ -26,14 +26,15 @@ function formatNum(n) {
   return n.toString();
 }
 
-// ── পারফরম্যান্স ফিক্স: থাম্বনেইল সরাসরি মূল সোর্স (Google Drive ইত্যাদি)
-// থেকে না এনে, একটা ফ্রি image-resizing/caching proxy (images.weserv.nl)
-// দিয়ে ছোট, optimized সাইজে আনা হচ্ছে — লোড অনেক দ্রুত হবে। এটা শুধু
-// ছবি দেখানোর পদ্ধতি বদলাচ্ছে, ডেটা/লজিকের কিছুই বদলাচ্ছে না। ──
+// ── থাম্বনেইল ফিক্স: আগে images.weserv.nl ব্যবহার হতো, কিন্তু ওই ডোমেইন
+// এখন wsrv.nl-এ মাইগ্রেট হয়ে গেছে বলে রিকোয়েস্ট ফেইল করছিল এবং কোনো
+// থাম্বনেইলই দেখাচ্ছিল না। শুধু ডোমেইনটা wsrv.nl করে ঠিক করা হলো —
+// তোমার postimg.cc লিংকগুলো এমনিতেই ফাস্ট, শুধু resize/webp-এর জন্য
+// এই প্রক্সি ব্যবহার করা হচ্ছে। ──
 function thumbUrl(url, width) {
   if (!url) return url;
   const clean = url.replace(/^https?:\/\//, '');
-  return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
+  return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
 }
 
 // একটা ভিডিও একাধিক ক্যাটাগরিতে থাকতে পারবে — Sheets-এ কমা (,) দিয়ে
@@ -433,7 +434,15 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
                       src={thumbUrl(v.thumbnail, 400)}
                       alt={`${v.title} - ভাইরাল ভিডিও বাংলাদেশ`}
                       loading={i < 6 ? 'eager' : 'lazy'}
-                      onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/640/360`; }}
+                      onError={e => {
+                        // ── প্রক্সি ফেইল করলে আগে original থাম্বনেইল ট্রাই, তারপর picsum ফলব্যাক ──
+                        if (e.target.dataset.fallback !== 'original' && v.thumbnail) {
+                          e.target.dataset.fallback = 'original';
+                          e.target.src = v.thumbnail;
+                        } else {
+                          e.target.src = `https://picsum.photos/seed/${v.id}/640/360`;
+                        }
+                      }}
                     />
                     <div className="play-btn">
                       <svg viewBox="0 0 80 80" fill="none">
@@ -550,4 +559,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       )}
     </>
   );
-    }
+}
