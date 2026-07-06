@@ -20,6 +20,24 @@ function formatNum(n) {
   return n.toString();
 }
 
+// ── পারফরম্যান্স ফিক্স: index.js-এর মতোই থাম্বনেইল একটা free
+// image-proxy (images.weserv.nl) দিয়ে ছোট/optimized সাইজে দ্রুত লোড ──
+function thumbUrl(url, width) {
+  if (!url) return url;
+  const clean = url.replace(/^https?:\/\//, '');
+  return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
+}
+
+// index.js-এর PER_PAGE-এর সাথে অবশ্যই মিলতে হবে, নাহলে pageBatch নম্বর গরমিল হবে
+const PER_PAGE = 30;
+
+// একটা ভিডিও একাধিক ক্যাটাগরিতে থাকতে পারবে — Sheets-এ কমা (,) দিয়ে
+// আলাদা করে লিখলেই ভিডিওটা দুই জায়গাতেই দেখাবে (index.js-এর সাথে consistent)
+function parseCategories(str) {
+  const arr = (str || '').split(',').map(s => s.trim()).filter(Boolean);
+  return arr.length ? arr : ['General'];
+}
+
 // একই টাইটেল বারবার এলে slug-এর শেষে -2, -3 ... যোগ হবে, যাতে প্রতিটা
 // ভিডিওর নিজস্ব আলাদা URL থাকে। index.js আর sitemap.js-এও এই একই
 // লজিক ব্যবহার করা হয়েছে, তাই সব জায়গায় slug মিলে যাবে।
@@ -50,7 +68,11 @@ function getEmbedUrl(url) {
   return url;
 }
 
-export async function getServerSideProps({ params }) {
+export async function getServerSideProps({ params, res: httpRes }) {
+  // ── পারফরম্যান্স ফিক্স: index.js-এর মতোই এই পেজও Edge-এ ৬০ সেকেন্ড
+  // cache হবে, দ্বিতীয়বার একই ভিডিও পেজে কেউ গেলে সাথে সাথে লোড হবে। ──
+  httpRes.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
   try {
     const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`);
     const text = await res.text();
@@ -63,17 +85,31 @@ export async function getServerSideProps({ params }) {
       title:       row.c[0]?.v || 'Untitled',
       videoUrl:    row.c[1]?.v || '',
       thumbnail:   row.c[2]?.v || `https://picsum.photos/seed/${i}/640/360`,
-      category:    row.c[3]?.v || 'General',
+      categories:  parseCategories(row.c[3]?.v),
       date:        row.c[4]?.v || '',
       duration:    row.c[5]?.v || '',
       description: row.c[6]?.v || '',
       slug:        uniqueSlugs[i]
-    })).filter(v => v.title !== 'Title').reverse();
+    })).filter(v => v.title !== 'Title').reverse()
+      .map((v, idx) => ({ ...v, pageBatch: Math.floor(idx / PER_PAGE) + 1 }));
 
     const video = allVideos.find(v => v.slug === params.slug);
     if (!video) return { notFound: true };
 
-    const related = allVideos.filter(v => v.id !== video.id && v.category === video.category).slice(0, 12);
+    // ── Related videos: প্রতিটা ক্যাটাগরি থেকে কিছু (৫টা করে) ভিডিও,
+    // আর ভিডিওটা হোমপেজের যেই "ব্যাচ/পেজ"-এ ছিল সেখান থেকেও ২-৩টা ভিডিও।
+    // যেহেতু pageBatch প্রতিটা ভিডিওর নিজস্ব বৈশিষ্ট্য, কেউ যদি এই
+    // batch-related ভিডিওগুলোর একটাতে ক্লিক করে, সেই ভিডিওর পেজেও আবার
+    // একই ব্যাচ থেকে related ভিডিও আসতে থাকবে — চেইন হিসেবে চলতে থাকে। ──
+    const usedIds = new Set([video.id]);
+    const categoryRelated = [];
+    video.categories.forEach(cat => {
+      const matches = allVideos.filter(v => !usedIds.has(v.id) && v.categories.includes(cat)).slice(0, 5);
+      matches.forEach(v => { categoryRelated.push(v); usedIds.add(v.id); });
+    });
+    const batchRelated = allVideos.filter(v => !usedIds.has(v.id) && v.pageBatch === video.pageBatch).slice(0, 3);
+    batchRelated.forEach(v => usedIds.add(v.id));
+    const related = [...categoryRelated, ...batchRelated].slice(0, 24);
 
     return { props: { video, related } };
   } catch(e) {
@@ -214,7 +250,7 @@ atOptions = {
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": SITE_URL },
-      { "@type": "ListItem", "position": 2, "name": video.category, "item": `${SITE_URL}/?cat=${video.category}` },
+      { "@type": "ListItem", "position": 2, "name": video.categories[0], "item": `${SITE_URL}/?cat=${video.categories[0]}` },
       { "@type": "ListItem", "position": 3, "name": video.title, "item": pageUrl }
     ]
   };
@@ -299,7 +335,7 @@ atOptions = {
         <a className="back-btn" href="/">← হোমে ফিরুন</a>
 
         <div className="breadcrumb">
-          <a href="/">Home</a> › <a href={`/?cat=${video.category}`}>{video.category}</a> › {video.title}
+          <a href="/">Home</a> › <a href={`/?cat=${video.categories[0]}`}>{video.categories.join(', ')}</a> › {video.title}
         </div>
 
         <div className="player-layout">
@@ -327,7 +363,7 @@ atOptions = {
             <div className="video-stats-row">
               <span>👁 {formatNum(views[video.slug] || 0)} views</span>
               <span>❤️ {formatNum(likes[video.id] || 0)} likes</span>
-              <span>📁 {video.category}</span>
+              <span>📁 {video.categories.join(', ')}</span>
               {video.date && <span>📅 {video.date}</span>}
             </div>
 
@@ -357,11 +393,11 @@ atOptions = {
                 ) : related.map(v => (
                   <a key={v.id} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                     <div className="related-thumb">
-                      <img src={v.thumbnail} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
+                      <img src={thumbUrl(v.thumbnail, 320)} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
                     </div>
                     <div className="related-info">
                       <div className="related-title-text">{v.title}</div>
-                      <div className="related-meta">👁 {formatNum(views[v.slug] || 0)} · {v.category}</div>
+                      <div className="related-meta">👁 {formatNum(views[v.slug] || 0)} · {v.categories.join(', ')}</div>
                     </div>
                   </a>
                 ))}
@@ -378,11 +414,11 @@ atOptions = {
               ) : related.map(v => (
                 <a key={v.id} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                   <div className="related-thumb">
-                    <img src={v.thumbnail} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
+                    <img src={thumbUrl(v.thumbnail, 320)} alt={v.title} loading="lazy" onError={e => { e.target.src = `https://picsum.photos/seed/${v.id}/320/180`; }} />
                   </div>
                   <div className="related-info">
                     <div className="related-title-text">{v.title}</div>
-                    <div className="related-meta">👁 {formatNum(views[v.slug] || 0)} · {v.category}</div>
+                    <div className="related-meta">👁 {formatNum(views[v.slug] || 0)} · {v.categories.join(', ')}</div>
                   </div>
                 </a>
               ))}
@@ -403,4 +439,4 @@ atOptions = {
       </div>
     </>
   );
-  }
+            }
