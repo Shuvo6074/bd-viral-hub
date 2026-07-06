@@ -26,13 +26,16 @@ function formatNum(n) {
   return n.toString();
 }
 
-// ── থাম্বনেইল ফিক্স: আগে images.weserv.nl ব্যবহার হতো, কিন্তু ওই ডোমেইন
-// এখন wsrv.nl-এ মাইগ্রেট হয়ে গেছে বলে রিকোয়েস্ট ফেইল করছিল এবং কোনো
-// থাম্বনেইলই দেখাচ্ছিল না। শুধু ডোমেইনটা wsrv.nl করে ঠিক করা হলো —
-// তোমার postimg.cc লিংকগুলো এমনিতেই ফাস্ট, শুধু resize/webp-এর জন্য
-// এই প্রক্সি ব্যবহার করা হচ্ছে। ──
+// ── থাম্বনেইল ফিক্স (আপডেট): wsrv.nl প্রক্সি একসাথে অনেক (৩০টা) রিকোয়েস্ট
+// পেলে rate-limit/timeout করে ফেলছিল — এই কারণেই প্রথমবার পেজ লোডে থাম্বনেইল
+// কালো দেখাচ্ছিল, আর রিলোড দিলে ঠিক হয়ে যাচ্ছিল (ততক্ষণে wsrv নিজে ক্যাশ
+// করে ফেলত)। যেহেতু তোমার থাম্বনেইল মূলত postimg.cc-তে থাকে, আর postimg.cc
+// নিজেই একটা ফাস্ট, hotlink-friendly CDN — postimg লিংকের জন্য প্রক্সি
+// পুরোপুরি বাদ দিয়ে সরাসরি URL ব্যবহার করা হচ্ছে। অন্য কোনো সোর্স
+// (picsum ইত্যাদি) হলে তখনই শুধু wsrv.nl ব্যবহার হবে। ──
 function thumbUrl(url, width) {
   if (!url) return url;
+  if (url.includes('postimg.cc')) return url;
   const clean = url.replace(/^https?:\/\//, '');
   return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
 }
@@ -559,4 +562,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       )}
     </>
   );
-}
+      }
