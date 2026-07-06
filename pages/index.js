@@ -175,6 +175,16 @@ export default function Home({ initialVideos }) {
     }, REPEAT_MS);
   }
 
+  // ── ওভারলে-তে ক্লিক করলে: iframe-এর বদলে সরাসরি নতুন ট্যাবে/ব্রাউজারে
+  // স্মার্টলিংক ওপেন করা হচ্ছে। এটা real user click থেকে সরাসরি কল হচ্ছে
+  // বলে popup blocker আটকাবে না, আর iframe-এ যেসব অ্যাড নেটওয়ার্ক
+  // frame-busting করে (তাই লোড হতো না), সেগুলোও এখন ঠিকমতো খুলবে —
+  // কারণ এটা এখন একটা আসল ব্রাউজার ট্যাব, iframe না। ──
+  function handleAdOverlayClick() {
+    window.open(SMARTLINK_URL, '_blank');
+    closeAd();
+  }
+
   // ── player page থেকে ব্যাক করলে একবার দেখাও ──
   useEffect(() => {
     const handlePageShow = (e) => { if (e.persisted) openAd(); };
@@ -399,6 +409,20 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
             color:var(--accent);font-weight:700;font-size:0.95rem;
             cursor:pointer;font-family:'DM Sans',sans-serif;
           }
+          .interstitial-content{
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            width:100%;height:100%;color:#fff;cursor:pointer;text-align:center;padding:1rem;
+          }
+          .interstitial-tap-icon{
+            font-size:3rem;margin-bottom:1rem;animation:tapPulse 1.2s ease-in-out infinite;
+          }
+          .interstitial-content p{
+            font-family:'DM Sans',sans-serif;font-size:1rem;color:#ccc;
+          }
+          @keyframes tapPulse{
+            0%,100%{transform:scale(1);opacity:0.8;}
+            50%{transform:scale(1.15);opacity:1;}
+          }
         `}</style>
       </Head>
 
@@ -547,17 +571,23 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         </div>
       </footer>
 
-      {/* ── Interstitial Overlay — player page এর মতো একই system ── */}
+      {/* ── Interstitial Overlay (আপডেট): iframe বাদ দেওয়া হয়েছে, কারণ
+           অনেক অ্যাড নেটওয়ার্ক iframe-এ embed হতে দেয় না (frame-busting)।
+           এখন ওভারলে-তে ক্লিক করলে সরাসরি নতুন ব্রাউজার ট্যাবে অ্যাড
+           খুলবে — ইউজারের কাছে মনে হবে ওভারলের ভেতরেই লোড হচ্ছে। ── */}
       {showAd && (
-        <div className="interstitial-overlay">
+        <div className="interstitial-overlay" onClick={handleAdOverlayClick}>
           <div className="interstitial-bar">
             {!canSkip ? (
               <span className="interstitial-timer">{adTimer}</span>
             ) : (
-              <span className="interstitial-skip" onClick={closeAd}>skip ✕</span>
+              <span className="interstitial-skip" onClick={e => { e.stopPropagation(); closeAd(); }}>skip ✕</span>
             )}
           </div>
-          <iframe src={SMARTLINK_URL} />
+          <div className="interstitial-content">
+            <div className="interstitial-tap-icon">👆</div>
+            <p>বিজ্ঞাপন দেখতে এখানে ট্যাপ করুন</p>
+          </div>
         </div>
       )}
     </>
