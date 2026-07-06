@@ -309,6 +309,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         <meta name="google-site-verification" content="NAhrexeitv2hKbCbtefH1LpUOR6kogUYUr5wDAZiyr8" />
         <meta name="msvalidate.01" content="86580AA48D4BA42EFA60D7A9803A6C5A" />
         <meta name="80c09c1226ae5c6e50661d42891c7f91cd1b8e1e" content="80c09c1226ae5c6e50661d42891c7f91cd1b8e1e" />
+        <meta name="profiton-domain-verification" content="b288d3a5ad8909ef80b8f63971c86376b135bba47511fb95cdeaa086494e49ca" />
         <link rel="canonical" href="https://bd-viral-hub.vercel.app/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="BD Viral Hub | বাংলাদেশের সেরা ভাইরাল ভিডিও ২০২৬" />
