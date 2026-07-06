@@ -20,11 +20,13 @@ function formatNum(n) {
   return n.toString();
 }
 
-// ── থাম্বনেইল ফিক্স: index.js-এর মতোই images.weserv.nl-এর বদলে
-// wsrv.nl (নতুন ডোমেইন) ব্যবহার করা হচ্ছে — পুরনো ডোমেইনে রিকোয়েস্ট
-// ফেইল করছিল বলে কোনো থাম্বনেইলই (related সহ) দেখাচ্ছিল না। ──
+// ── থাম্বনেইল ফিক্স (আপডেট): index.js-এর মতোই — postimg.cc লিংকের জন্য
+// প্রক্সি বাদ দিয়ে সরাসরি URL ব্যবহার করা হচ্ছে, কারণ wsrv.nl একসাথে
+// অনেক রিকোয়েস্ট পেলে rate-limit/timeout করে ফেলছিল (প্রথমবার কালো
+// থাম্বনেইল, রিলোডে ঠিক হওয়ার কারণ এটাই)। ──
 function thumbUrl(url, width) {
   if (!url) return url;
+  if (url.includes('postimg.cc')) return url;
   const clean = url.replace(/^https?:\/\//, '');
   return `https://wsrv.nl/?url=${encodeURIComponent(clean)}&w=${width}&q=75&output=webp`;
 }
@@ -97,20 +99,29 @@ export async function getServerSideProps({ params, res: httpRes }) {
     const video = allVideos.find(v => v.slug === params.slug);
     if (!video) return { notFound: true };
 
-    // ── Related videos: প্রতিটা ক্যাটাগরি থেকে কিছু (৫টা করে) ভিডিও,
-    // আর ভিডিওটা হোমপেজের যেই "ব্যাচ/পেজ"-এ ছিল সেখান থেকেও ২-৩টা ভিডিও।
-    // যেহেতু pageBatch প্রতিটা ভিডিওর নিজস্ব বৈশিষ্ট্য, কেউ যদি এই
-    // batch-related ভিডিওগুলোর একটাতে ক্লিক করে, সেই ভিডিওর পেজেও আবার
-    // একই ব্যাচ থেকে related ভিডিও আসতে থাকবে — চেইন হিসেবে চলতে থাকে। ──
+    // ── Related videos (আপডেট): শুধু এই ভিডিওর নিজের ক্যাটাগরি না, বরং
+    // সাইটের সব ক্যাটাগরি থেকেই কিছু কিছু ভিডিও মিক্স করে দেখানো হচ্ছে।
+    // প্রথমে এই ভিডিওর নিজের ক্যাটাগরি(গুলো) থেকে ৫টা করে (সবচেয়ে বেশি
+    // প্রাসঙ্গিক বলে আগে রাখা হলো), তারপর সাইটের বাকি সব ক্যাটাগরি থেকেও
+    // ৫টা করে ভিডিও যোগ করা হচ্ছে, আর শেষে একই batch/page থেকে ২-৩টা। ──
     const usedIds = new Set([video.id]);
-    const categoryRelated = [];
+    const relatedVideos = [];
+
     video.categories.forEach(cat => {
       const matches = allVideos.filter(v => !usedIds.has(v.id) && v.categories.includes(cat)).slice(0, 5);
-      matches.forEach(v => { categoryRelated.push(v); usedIds.add(v.id); });
+      matches.forEach(v => { relatedVideos.push(v); usedIds.add(v.id); });
     });
+
+    const allCategories = [...new Set(allVideos.flatMap(v => v.categories))];
+    const otherCategories = allCategories.filter(cat => !video.categories.includes(cat));
+    otherCategories.forEach(cat => {
+      const matches = allVideos.filter(v => !usedIds.has(v.id) && v.categories.includes(cat)).slice(0, 5);
+      matches.forEach(v => { relatedVideos.push(v); usedIds.add(v.id); });
+    });
+
     const batchRelated = allVideos.filter(v => !usedIds.has(v.id) && v.pageBatch === video.pageBatch).slice(0, 3);
     batchRelated.forEach(v => usedIds.add(v.id));
-    const related = [...categoryRelated, ...batchRelated].slice(0, 24);
+    const related = [...relatedVideos, ...batchRelated].slice(0, 40);
 
     return { props: { video, related } };
   } catch(e) {
