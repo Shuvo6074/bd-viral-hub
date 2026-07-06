@@ -4,12 +4,8 @@ import Head from "next/head";
 const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
 const PER_PAGE = 30;
 
-// Smartlink URL — iframe এর ভেতরে লোড হবে, window.open() নেই
+// Smartlink URL — প্রথম ক্লিকে নতুন ট্যাবে ওপেন হবে
 const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
-
-const FIRST_SHOW_MS  = 10000;  // পেজ লোডের ১০ সেকেন্ড পর প্রথমবার
-const REPEAT_MS      = 120000; // তারপর প্রতি ২ মিনিট পর
-const SKIP_AFTER_SEC = 10;     // ১০ সেকেন্ড পর skip দেখাবে
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -117,12 +113,7 @@ export default function Home({ initialVideos }) {
   const [error, setError]           = useState('');
   const [views, setViews]           = useState({});
 
-  // Interstitial states
-  const [showAd, setShowAd]         = useState(false);
-  const [adTimer, setAdTimer]       = useState(SKIP_AFTER_SEC);
-  const [canSkip, setCanSkip]       = useState(false);
-
-  const repeatTimerRef = useRef(null);
+  const firstClickRef = useRef(false);
 
   useEffect(() => {
     // ── ভিউ কাউন্ট: [slug].js পেজের মতোই একই Response Sheet থেকে
@@ -142,79 +133,20 @@ export default function Home({ initialVideos }) {
       .catch(() => {});
   }, []);
 
-  // ── Social Bar Ad inject — একবার inject, remove করা হবে না ──
+  // ── প্রথম ক্লিকে Smartlink নতুন ট্যাবে ওপেন হবে, পেজের স্বাভাবিক ক্লিক
+  // (যেমন ভিডিওতে ঢোকা) ব্লক হবে না — এরপর যতবার ক্লিক করা হোক না কেন,
+  // আর কোনো স্মার্টলিংক ওপেন হবে না। পেজ রিলোড হলে এই ref আবার রিসেট
+  // হয়ে যাবে, তাই আবার প্রথম ক্লিকে স্মার্টলিংক ওপেন হবে। ──
   useEffect(() => {
-    if (document.querySelector('script[src*="5c5fa829d1b2adb187a491231ec4716f"]')) return;
-    const s = document.createElement('script');
-    s.src = 'https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js';
-    s.async = true;
-    document.body.appendChild(s);
-  }, []);
-
-  // ── ProfitOn Shuffle Box Ad inject — একবার inject, remove করা হবে না ──
-  useEffect(() => {
-    if (document.querySelector('script[src*="shUHBC6CD6Vpm"]')) return;
-    const s = document.createElement('script');
-    s.src = '//lb.acoupfoughty.com/shUHBC6CD6Vpm/146126';
-    s.async = true;
-    s.setAttribute('data-cfasync', 'false');
-    document.body.appendChild(s);
-  }, []);
-
-  // ── প্রথমবার ১৫ সেকেন্ড পর দেখাও, তারপর প্রতি ২ মিনিট ──
-  useEffect(() => {
-    const firstTimer = setTimeout(() => {
-      openAd();
-    }, FIRST_SHOW_MS);
-
-    return () => clearTimeout(firstTimer);
-  }, []);
-
-  function openAd() {
-    setShowAd(true);
-    setAdTimer(SKIP_AFTER_SEC);
-    setCanSkip(false);
-  }
-
-  function closeAd() {
-    setShowAd(false);
-    // skip করার পর ২ মিনিট পর আবার দেখাবে
-    clearTimeout(repeatTimerRef.current);
-    repeatTimerRef.current = setTimeout(() => {
-      openAd();
-    }, REPEAT_MS);
-  }
-
-  // ── ওভারলে-তে ক্লিক করলে: iframe-এর বদলে সরাসরি নতুন ট্যাবে/ব্রাউজারে
-  // স্মার্টলিংক ওপেন করা হচ্ছে। এটা real user click থেকে সরাসরি কল হচ্ছে
-  // বলে popup blocker আটকাবে না, আর iframe-এ যেসব অ্যাড নেটওয়ার্ক
-  // frame-busting করে (তাই লোড হতো না), সেগুলোও এখন ঠিকমতো খুলবে —
-  // কারণ এটা এখন একটা আসল ব্রাউজার ট্যাব, iframe না। ──
-  function handleAdOverlayClick() {
-    window.open(SMARTLINK_URL, '_blank');
-    closeAd();
-  }
-
-  // ── player page থেকে ব্যাক করলে একবার দেখাও ──
-  useEffect(() => {
-    const handlePageShow = (e) => { if (e.persisted) openAd(); };
-    window.addEventListener('pageshow', handlePageShow);
-    return () => {
-      window.removeEventListener('pageshow', handlePageShow);
-      clearTimeout(repeatTimerRef.current);
-    };
-  }, []);
-
-  // ── Skip countdown ──
-  useEffect(() => {
-    if (!showAd) return;
-    if (adTimer <= 0) {
-      setCanSkip(true);
-      return;
+    function handleFirstClick() {
+      if (firstClickRef.current) return;
+      firstClickRef.current = true;
+      window.open(SMARTLINK_URL, '_blank');
+      document.removeEventListener('click', handleFirstClick, true);
     }
-    const t = setTimeout(() => setAdTimer(n => n - 1), 1000);
-    return () => clearTimeout(t);
-  }, [showAd, adTimer]);
+    document.addEventListener('click', handleFirstClick, true);
+    return () => document.removeEventListener('click', handleFirstClick, true);
+  }, []);
 
   // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
@@ -393,47 +325,6 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:100%;}}
           body{padding-bottom:55px;}
-          #adbox-5c5fa829d1b2adb187a491231ec4716f,
-          div[id*="5c5fa829d1b2adb187a491231ec4716f"]{
-            position:fixed !important;bottom:0 !important;top:auto !important;
-            left:0 !important;width:100% !important;z-index:9999 !important;
-          }
-          /* ── Interstitial — player page এর মতোই ── */
-          .interstitial-overlay{
-            position:fixed;top:0;left:0;
-            width:100vw;height:100vh;
-            background:#000;z-index:99999;
-          }
-          .interstitial-overlay iframe{
-            width:100%;height:100%;border:none;
-          }
-          .interstitial-bar{
-            position:absolute;top:0;left:0;right:0;
-            height:40px;background:rgba(0,0,0,0.75);
-            display:flex;align-items:center;justify-content:flex-end;
-            padding:0 12px;z-index:100000;
-          }
-          .interstitial-timer{
-            color:#fff;font-size:0.85rem;font-family:'DM Sans',sans-serif;
-          }
-          .interstitial-skip{
-            color:var(--accent);font-weight:700;font-size:0.95rem;
-            cursor:pointer;font-family:'DM Sans',sans-serif;
-          }
-          .interstitial-content{
-            display:flex;flex-direction:column;align-items:center;justify-content:center;
-            width:100%;height:100%;color:#fff;cursor:pointer;text-align:center;padding:1rem;
-          }
-          .interstitial-tap-icon{
-            font-size:3rem;margin-bottom:1rem;animation:tapPulse 1.2s ease-in-out infinite;
-          }
-          .interstitial-content p{
-            font-family:'DM Sans',sans-serif;font-size:1rem;color:#ccc;
-          }
-          @keyframes tapPulse{
-            0%,100%{transform:scale(1);opacity:0.8;}
-            50%{transform:scale(1.15);opacity:1;}
-          }
         `}</style>
       </Head>
 
@@ -582,25 +473,6 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         </div>
       </footer>
 
-      {/* ── Interstitial Overlay (আপডেট): iframe বাদ দেওয়া হয়েছে, কারণ
-           অনেক অ্যাড নেটওয়ার্ক iframe-এ embed হতে দেয় না (frame-busting)।
-           এখন ওভারলে-তে ক্লিক করলে সরাসরি নতুন ব্রাউজার ট্যাবে অ্যাড
-           খুলবে — ইউজারের কাছে মনে হবে ওভারলের ভেতরেই লোড হচ্ছে। ── */}
-      {showAd && (
-        <div className="interstitial-overlay" onClick={handleAdOverlayClick}>
-          <div className="interstitial-bar">
-            {!canSkip ? (
-              <span className="interstitial-timer">{adTimer}</span>
-            ) : (
-              <span className="interstitial-skip" onClick={e => { e.stopPropagation(); closeAd(); }}>skip ✕</span>
-            )}
-          </div>
-          <div className="interstitial-content">
-            <div className="interstitial-tap-icon">👆</div>
-            <p>বিজ্ঞাপন দেখতে এখানে ট্যাপ করুন</p>
-          </div>
-        </div>
-      )}
     </>
   );
       }
