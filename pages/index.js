@@ -137,19 +137,20 @@ export default function Home({ initialVideos }) {
   // (যেমন ভিডিওতে ঢোকা) ব্লক হবে না — এরপর যতবার ক্লিক করা হোক না কেন,
   // আর কোনো স্মার্টলিংক ওপেন হবে না। পেজ রিলোড হলে এই ref আবার রিসেট
   // হয়ে যাবে, তাই আবার প্রথম ক্লিকে স্মার্টলিংক ওপেন হবে। ──
-  useEffect(() => {
-    function handleFirstClick(e) {
-      // ── TwinRed-এর হিডেন #ad-trigger থেকে আসা প্রোগ্রাম্যাটিক ক্লিক
-      // যেন Smartlink পপুনডার ওপেন না করে, তাই এটা এখানেই বাদ দেওয়া হলো ──
-      if (e.target && e.target.id === 'ad-trigger') return;
-      if (firstClickRef.current) return;
-      firstClickRef.current = true;
-      window.open(SMARTLINK_URL, '_blank');
-      document.removeEventListener('click', handleFirstClick, true);
-    }
-    document.addEventListener('click', handleFirstClick, true);
-    return () => document.removeEventListener('click', handleFirstClick, true);
-  }, []);
+  // ── Smartlink (প্রথম ক্লিকে নতুন ট্যাবে ওপেন) আপাতত বন্ধ রাখা হলো,
+  // যাতে TwinRed ইন্টারস্টিশিয়ালের সাথে কনফ্লিক্ট না করে। ভবিষ্যতে আবার
+  // চালু করতে চাইলে নিচের useEffect-টা আনকমেন্ট করে দিলেই হবে। ──
+  // useEffect(() => {
+  //   function handleFirstClick(e) {
+  //     if (e.target && e.target.id === 'ad-trigger') return;
+  //     if (firstClickRef.current) return;
+  //     firstClickRef.current = true;
+  //     window.open(SMARTLINK_URL, '_blank');
+  //     document.removeEventListener('click', handleFirstClick, true);
+  //   }
+  //   document.addEventListener('click', handleFirstClick, true);
+  //   return () => document.removeEventListener('click', handleFirstClick, true);
+  // }, []);
 
   // ── TwinRed Interstitial Ad Trigger (হোমপেজ): ঢোকার ১৫ সেকেন্ড পর
   // প্রথমবার, তারপর প্রতি ২ মিনিট (১২০ সেকেন্ড) পরপর বারবার ──
