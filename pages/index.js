@@ -148,6 +148,21 @@ export default function Home({ initialVideos }) {
     return () => document.removeEventListener('click', handleFirstClick, true);
   }, []);
 
+  // ── TwinRed Interstitial Ad Trigger (হোমপেজ): ঢোকার ১৫ সেকেন্ড পর
+  // প্রথমবার, তারপর প্রতি ২ মিনিট (১২০ সেকেন্ড) পরপর বারবার ──
+  useEffect(() => {
+    const triggerAd = () => {
+      const el = document.getElementById('ad-trigger');
+      if (el) el.click();
+    };
+    const firstTimer = setTimeout(triggerAd, 15000);
+    const repeatTimer = setInterval(triggerAd, 120000);
+    return () => {
+      clearTimeout(firstTimer);
+      clearInterval(repeatTimer);
+    };
+  }, []);
+
   // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
     const container = document.getElementById('ad-bottom-container');
@@ -473,6 +488,12 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         </div>
       </footer>
 
+      {/* ── TwinRed Interstitial: হিডেন ট্রিগার এলিমেন্ট + ad script ── */}
+      <a id="ad-trigger" style={{ display: 'none' }} href="#" onClick={e => e.preventDefault()}></a>
+      <ins data-tr-zone="01KWY3RG4PQHPRN8FJ9BRXY118">
+        <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"></script>
+      </ins>
+
     </>
   );
-      }
+    }
