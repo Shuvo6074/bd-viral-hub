@@ -186,6 +186,18 @@ export default function VideoPage({ video, related }) {
       .catch(() => {});
   }, [video.id]);
 
+  // ── TwinRed Interstitial Ad Trigger (ভিডিও প্লেয়ার পেজ): প্রতি ২ মিনিট
+  // (১২০ সেকেন্ড) পরপর বারবার — ভিডিও স্লাগ পাল্টালে (নতুন ভিডিওতে গেলে)
+  // টাইমার নতুন করে শুরু হবে ──
+  useEffect(() => {
+    const triggerAd = () => {
+      const el = document.getElementById('ad-trigger');
+      if (el) el.click();
+    };
+    const repeatTimer = setInterval(triggerAd, 120000);
+    return () => clearInterval(repeatTimer);
+  }, [video.id]);
+
   // Inject highperformanceformat.com 728x90 banner ads (isolated iframe, runs twice)
   useEffect(() => {
     function buildAdIframe(key, width, height) {
@@ -473,6 +485,13 @@ atOptions = {
         </div>
 
       </div>
+
+      {/* ── TwinRed Interstitial: হিডেন ট্রিগার এলিমেন্ট + ad script ── */}
+      <a id="ad-trigger" style={{ display: 'none' }} href="#" onClick={e => e.preventDefault()}></a>
+      <ins data-tr-zone="01KWY3RG4PQHPRN8FJ9BRXY118">
+        <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"></script>
+      </ins>
+
     </>
   );
       }
