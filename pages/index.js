@@ -138,7 +138,10 @@ export default function Home({ initialVideos }) {
   // আর কোনো স্মার্টলিংক ওপেন হবে না। পেজ রিলোড হলে এই ref আবার রিসেট
   // হয়ে যাবে, তাই আবার প্রথম ক্লিকে স্মার্টলিংক ওপেন হবে। ──
   useEffect(() => {
-    function handleFirstClick() {
+    function handleFirstClick(e) {
+      // ── TwinRed-এর হিডেন #ad-trigger থেকে আসা প্রোগ্রাম্যাটিক ক্লিক
+      // যেন Smartlink পপুনডার ওপেন না করে, তাই এটা এখানেই বাদ দেওয়া হলো ──
+      if (e.target && e.target.id === 'ad-trigger') return;
       if (firstClickRef.current) return;
       firstClickRef.current = true;
       window.open(SMARTLINK_URL, '_blank');
@@ -496,4 +499,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
 
     </>
   );
-    }
+      }
