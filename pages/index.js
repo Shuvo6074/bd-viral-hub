@@ -152,20 +152,11 @@ export default function Home({ initialVideos }) {
   //   return () => document.removeEventListener('click', handleFirstClick, true);
   // }, []);
 
-  // ── TwinRed Interstitial Ad Trigger (হোমপেজ): ঢোকার ১৫ সেকেন্ড পর
-  // প্রথমবার, তারপর প্রতি ২ মিনিট (১২০ সেকেন্ড) পরপর বারবার ──
-  useEffect(() => {
-    const triggerAd = () => {
-      const el = document.getElementById('ad-trigger');
-      if (el) el.click();
-    };
-    const firstTimer = setTimeout(triggerAd, 15000);
-    const repeatTimer = setInterval(triggerAd, 120000);
-    return () => {
-      clearTimeout(firstTimer);
-      clearInterval(repeatTimer);
-    };
-  }, []);
+  // ── TwinRed ইন্টারস্টিশিয়াল এখন থাম্বনেইল (.video-card) ক্লিকে সরাসরি
+  // ফায়ার হয় — এটা TwinRed dashboard-এর Trigger element সেটিংসে কনফিগার
+  // করা আছে, তাই এখানে আলাদা কোনো JS টাইমার/fake-click লজিকের দরকার নেই।
+  // (আগের টাইমার-বেসড পদ্ধতি ব্রাউজারের isTrusted সুরক্ষার কারণে কাজ
+  // করছিল না, তাই বাদ দেওয়া হলো।) ──
 
   // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
@@ -492,8 +483,8 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         </div>
       </footer>
 
-      {/* ── TwinRed Interstitial: হিডেন ট্রিগার এলিমেন্ট + ad script ── */}
-      <a id="ad-trigger" style={{ display: 'none' }} href="#" onClick={e => e.preventDefault()}></a>
+      {/* ── TwinRed Interstitial: ad script (থাম্বনেইল/.video-card ক্লিকে
+           dashboard-এর Trigger element সেটিংস অনুযায়ী নিজে থেকেই ফায়ার হবে) ── */}
       <ins data-tr-zone="01KWY3RG4PQHPRN8FJ9BRXY118">
         <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"></script>
       </ins>
