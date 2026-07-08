@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
@@ -135,6 +135,18 @@ export default function VideoPage({ video, related }) {
   const [liked, setLiked] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
+  // ── ভিডিও অ্যাড প্লেয়ার (ডেসক্রিপশনের নিচে, নিজস্ব প্লেয়ার) ──
+  const [showAdPlayer, setShowAdPlayer] = useState(true);
+  const [showAdCloseBtn, setShowAdCloseBtn] = useState(false);
+  const [adKey, setAdKey] = useState(0); // প্রতি সাইকেলে পরিবর্তন হবে, যাতে ভিডিও নতুন করে রিলোড/রিস্টার্ট হয়
+  const adHideRef = useRef(() => {}); // manual close বাটন থেকে কল করার জন্য রেফ
+
+  const AD_SCRIPT_SRC = 'https://js.mbidadm.com/static/scripts.js';
+  const AD_SCRIPT_PID = '447473';
+  const AD_SHOW_CLOSE_AFTER_MS = 30000; // অ্যাড শুরু হওয়ার ৩০ সেকেন্ড পর ✕ বাটন দেখাবে
+  const AD_AUTO_HIDE_AFTER_CLOSE_MS = 10000; // ✕ আসার পর ১০ সেকেন্ডের মধ্যে বন্ধ না করলে নিজে থেকে বন্ধ হবে
+  const AD_RESHOW_AFTER_MS = 30000; // বন্ধ হওয়ার ৩০ সেকেন্ড পর আবার নতুন অ্যাড দেখাবে
+
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
 
   function handleOverlayClick() {
@@ -146,6 +158,17 @@ export default function VideoPage({ video, related }) {
     e.preventDefault();
     window.open(SMARTLINK_URL, '_blank');
     setTimeout(() => { window.location.href = `/video/${slug}`; }, 50);
+  }
+
+  function handleDownloadClick(e) {
+    e.preventDefault();
+    window.open(SMARTLINK_URL, '_blank');
+  }
+
+  function handleBackClick(e) {
+    e.preventDefault();
+    window.open(SMARTLINK_URL, '_blank');
+    setTimeout(() => { window.location.href = '/'; }, 50);
   }
 
   useEffect(() => {
@@ -186,18 +209,6 @@ export default function VideoPage({ video, related }) {
       .catch(() => {});
   }, [video.id]);
 
-  // ── TwinRed Interstitial Ad Trigger (ভিডিও প্লেয়ার পেজ): প্রতি ২ মিনিট
-  // (১২০ সেকেন্ড) পরপর বারবার — ভিডিও স্লাগ পাল্টালে (নতুন ভিডিওতে গেলে)
-  // টাইমার নতুন করে শুরু হবে ──
-  useEffect(() => {
-    const triggerAd = () => {
-      const el = document.getElementById('ad-trigger');
-      if (el) el.click();
-    };
-    const repeatTimer = setInterval(triggerAd, 120000);
-    return () => clearInterval(repeatTimer);
-  }, [video.id]);
-
   // Inject highperformanceformat.com 728x90 banner ads (isolated iframe, runs twice)
   useEffect(() => {
     function buildAdIframe(key, width, height) {
@@ -233,6 +244,59 @@ atOptions = {
       container.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
     });
   }, [video.id]);
+
+  // ── ভিডিও অ্যাড প্লেয়ার সাইকেল: দেখাও → ৩০সে পর ✕ বাটন → ✕ আসার ১০সে
+  // এর মধ্যে বন্ধ না করলে অটো বন্ধ → বন্ধ হওয়ার ৩০সে পর আবার নতুন অ্যাড ──
+  useEffect(() => {
+    let closeBtnTimer, autoHideTimer, reshowTimer;
+
+    function startAdCycle() {
+      setAdKey(k => k + 1);      // ভিডিও রিস্টার্ট/নতুন অ্যাড লোড করার জন্য key পরিবর্তন
+      setShowAdPlayer(true);
+      setShowAdCloseBtn(false);
+
+      closeBtnTimer = setTimeout(() => {
+        setShowAdCloseBtn(true);
+
+        autoHideTimer = setTimeout(() => {
+          hideAd();
+        }, AD_AUTO_HIDE_AFTER_CLOSE_MS);
+      }, AD_SHOW_CLOSE_AFTER_MS);
+    }
+
+    function hideAd() {
+      clearTimeout(closeBtnTimer);
+      clearTimeout(autoHideTimer);
+      setShowAdPlayer(false);
+      setShowAdCloseBtn(false);
+
+      reshowTimer = setTimeout(startAdCycle, AD_RESHOW_AFTER_MS);
+    }
+
+    adHideRef.current = hideAd; // ✕ বাটনে ক্লিক করলে এটা কল হবে (ম্যানুয়াল ক্লোজ)
+
+    startAdCycle();
+
+    return () => {
+      clearTimeout(closeBtnTimer);
+      clearTimeout(autoHideTimer);
+      clearTimeout(reshowTimer);
+    };
+  }, [video.id]);
+
+  // ── MyBid এর ডেলিভারি স্ক্রিপ্ট একবার পেজে লোড করা (দুইবার যোগ হওয়া আটকানো) ──
+  useEffect(() => {
+    if (document.querySelector(`script[data-admpid="${AD_SCRIPT_PID}"]`)) return;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = AD_SCRIPT_SRC;
+    s.setAttribute('data-admpid', AD_SCRIPT_PID);
+    document.body.appendChild(s);
+  }, []);
+
+  function handleAdCloseClick() {
+    adHideRef.current(); // ম্যানুয়ালি বন্ধ করলেও একই hideAd লজিক চলবে (৩০সে পর আবার দেখাবে)
+  }
 
   function toggleLike() {
     const newLikes = { ...likes };
@@ -346,6 +410,11 @@ atOptions = {
           .related-mobile{display:none;}
           .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;overflow:hidden;}
           .ad-banner-slot iframe{max-width:100%;}
+          .floating-ad-player{position:fixed;left:0;right:0;bottom:-260px;width:100%;max-width:420px;margin:0 auto;background:#000;border-radius:10px 10px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.5);transition:bottom 0.5s ease-out;z-index:9999;}
+          .floating-ad-player.show{bottom:0;}
+          .floating-ad-player video{width:100%;display:block;aspect-ratio:16/9;object-fit:contain;background:#000;border-radius:10px 10px 0 0;}
+          .floating-ad-header{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1a1a;font-size:0.68rem;color:#aaa;border-radius:10px 10px 0 0;}
+          .floating-ad-close{cursor:pointer;background:rgba(255,255,255,0.15);border:none;color:#fff;width:24px;height:24px;border-radius:50%;font-size:14px;line-height:24px;text-align:center;}
         `}</style>
       </Head>
 
@@ -356,7 +425,7 @@ atOptions = {
       </header>
 
       <div className="main">
-        <a className="back-btn" href="/">← হোমে ফিরুন</a>
+        <a className="back-btn" href="/" onClick={handleBackClick}>← হোমে ফিরুন</a>
 
         <div className="breadcrumb">
           <a href="/">Home</a> › <a href={`/?cat=${video.categories[0]}`}>{video.categories.join(', ')}</a> › {video.title}
@@ -396,7 +465,7 @@ atOptions = {
             )}
 
             <div className="video-actions">
-              <button className="action-btn download-btn" onClick={e => e.preventDefault()}>⬇️ Download</button>
+              <button className="action-btn download-btn" onClick={handleDownloadClick}>⬇️ Download</button>
               <button className={`action-btn${liked ? ' liked' : ''}`} onClick={toggleLike}>
                 ❤️ {formatNum(likes[video.id] || 0)} Like
               </button>
@@ -486,12 +555,19 @@ atOptions = {
 
       </div>
 
-      {/* ── TwinRed Interstitial: হিডেন ট্রিগার এলিমেন্ট + ad script ── */}
-      <a id="ad-trigger" style={{ display: 'none' }} href="#" onClick={e => e.preventDefault()}></a>
-      <ins data-tr-zone="01KWY3RG4PQHPRN8FJ9BRXY118">
-        <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"></script>
-      </ins>
-
+      {/* ── ফ্লোটিং/স্লাইড-আপ ভিডিও অ্যাড প্লেয়ার (নিচ থেকে উঠে আসে) ── */}
+      <div className={`floating-ad-player${showAdPlayer ? ' show' : ''}`}>
+        <div className="floating-ad-header">
+          <span>বিজ্ঞাপন</span>
+          {showAdCloseBtn && (
+            <button className="floating-ad-close" onClick={handleAdCloseClick}>✕</button>
+          )}
+        </div>
+        {/* MyBid এর স্ক্রিপ্ট এই id-টাকেই টার্গেট করে নিজে থেকে ভিডিও অ্যাড বসাবে */}
+        <div id="mybid-video-overlay-slot" key={adKey}>
+          <video id="mybid-ad-video" playsInline muted></video>
+        </div>
+      </div>
     </>
   );
-      }
+}
