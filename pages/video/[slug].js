@@ -135,17 +135,12 @@ export default function VideoPage({ video, related }) {
   const [liked, setLiked] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
-  // ── ভিডিও অ্যাড প্লেয়ার (ডেসক্রিপশনের নিচে, নিজস্ব প্লেয়ার) ──
-  const [showAdPlayer, setShowAdPlayer] = useState(true);
-  const [showAdCloseBtn, setShowAdCloseBtn] = useState(false);
-  const [adKey, setAdKey] = useState(0); // প্রতি সাইকেলে পরিবর্তন হবে, যাতে ভিডিও নতুন করে রিলোড/রিস্টার্ট হয়
-  const adHideRef = useRef(() => {}); // manual close বাটন থেকে কল করার জন্য রেফ
+  // ── MyBid Video Overlay: main video-container-এর সাথেই সরাসরি জড়ানো,
+  // আলাদা কোনো ফ্লোটিং প্লেয়ার/টাইমার-সাইকেল আর দরকার নেই ──
+  const [iframeStarted, setIframeStarted] = useState(false); // Google Drive/archive.org embed-এর ক্ষেত্রে থাম্বনেইলে ক্লিক করার আগ পর্যন্ত iframe লোড হবে না
 
   const AD_SCRIPT_SRC = 'https://js.mbidadm.com/static/scripts.js';
   const AD_SCRIPT_PID = '447473';
-  const AD_SHOW_CLOSE_AFTER_MS = 30000; // অ্যাড শুরু হওয়ার ৩০ সেকেন্ড পর ✕ বাটন দেখাবে
-  const AD_AUTO_HIDE_AFTER_CLOSE_MS = 10000; // ✕ আসার পর ১০ সেকেন্ডের মধ্যে বন্ধ না করলে নিজে থেকে বন্ধ হবে
-  const AD_RESHOW_AFTER_MS = 30000; // বন্ধ হওয়ার ৩০ সেকেন্ড পর আবার নতুন অ্যাড দেখাবে
 
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
 
@@ -245,45 +240,6 @@ atOptions = {
     });
   }, [video.id]);
 
-  // ── ভিডিও অ্যাড প্লেয়ার সাইকেল: দেখাও → ৩০সে পর ✕ বাটন → ✕ আসার ১০সে
-  // এর মধ্যে বন্ধ না করলে অটো বন্ধ → বন্ধ হওয়ার ৩০সে পর আবার নতুন অ্যাড ──
-  useEffect(() => {
-    let closeBtnTimer, autoHideTimer, reshowTimer;
-
-    function startAdCycle() {
-      setAdKey(k => k + 1);      // ভিডিও রিস্টার্ট/নতুন অ্যাড লোড করার জন্য key পরিবর্তন
-      setShowAdPlayer(true);
-      setShowAdCloseBtn(false);
-
-      closeBtnTimer = setTimeout(() => {
-        setShowAdCloseBtn(true);
-
-        autoHideTimer = setTimeout(() => {
-          hideAd();
-        }, AD_AUTO_HIDE_AFTER_CLOSE_MS);
-      }, AD_SHOW_CLOSE_AFTER_MS);
-    }
-
-    function hideAd() {
-      clearTimeout(closeBtnTimer);
-      clearTimeout(autoHideTimer);
-      setShowAdPlayer(false);
-      setShowAdCloseBtn(false);
-
-      reshowTimer = setTimeout(startAdCycle, AD_RESHOW_AFTER_MS);
-    }
-
-    adHideRef.current = hideAd; // ✕ বাটনে ক্লিক করলে এটা কল হবে (ম্যানুয়াল ক্লোজ)
-
-    startAdCycle();
-
-    return () => {
-      clearTimeout(closeBtnTimer);
-      clearTimeout(autoHideTimer);
-      clearTimeout(reshowTimer);
-    };
-  }, [video.id]);
-
   // ── MyBid এর ডেলিভারি স্ক্রিপ্ট একবার পেজে লোড করা (দুইবার যোগ হওয়া আটকানো) ──
   useEffect(() => {
     if (document.querySelector(`script[data-admpid="${AD_SCRIPT_PID}"]`)) return;
@@ -293,10 +249,6 @@ atOptions = {
     s.setAttribute('data-admpid', AD_SCRIPT_PID);
     document.body.appendChild(s);
   }, []);
-
-  function handleAdCloseClick() {
-    adHideRef.current(); // ম্যানুয়ালি বন্ধ করলেও একই hideAd লজিক চলবে (৩০সে পর আবার দেখাবে)
-  }
 
   function toggleLike() {
     const newLikes = { ...likes };
@@ -410,11 +362,9 @@ atOptions = {
           .related-mobile{display:none;}
           .ad-banner-slot{display:flex;justify-content:center;margin:1rem 0;overflow:hidden;}
           .ad-banner-slot iframe{max-width:100%;}
-          .floating-ad-player{position:fixed;left:0;right:0;bottom:-260px;width:100%;max-width:420px;margin:0 auto;background:#000;border-radius:10px 10px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,0.5);transition:bottom 0.5s ease-out;z-index:9999;}
-          .floating-ad-player.show{bottom:0;}
-          .floating-ad-player video{width:100%;display:block;aspect-ratio:16/9;object-fit:contain;background:#000;border-radius:10px 10px 0 0;}
-          .floating-ad-header{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#1a1a1a;font-size:0.68rem;color:#aaa;border-radius:10px 10px 0 0;}
-          .floating-ad-close{cursor:pointer;background:rgba(255,255,255,0.15);border:none;color:#fff;width:24px;height:24px;border-radius:50%;font-size:14px;line-height:24px;text-align:center;}
+          .iframe-click-gate{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;background:#000;}
+          .iframe-click-gate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.75;}
+          .iframe-click-gate .play-btn-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,61,61,0.9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,0.5);}
         `}</style>
       </Head>
 
@@ -433,18 +383,31 @@ atOptions = {
 
         <div className="player-layout">
           <div className="player-main">
-            <div className="video-container">
+            {/* MyBid এর স্ক্রিপ্ট এই id-টাকেই টার্গেট করে, ইউজার প্লে করতে ক্লিক করা মাত্রই
+                ওভারলে অ্যাড নিজে থেকে বসিয়ে দেবে (Playback: Start ফরম্যাট) */}
+            <div className="video-container" id="mybid-video-overlay-slot">
               {isDirectVideo ? (
                 <video controls autoPlay playsInline preload="metadata" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}>
                   <source src={video.videoUrl} type="video/mp4" />
                 </video>
-              ) : (
+              ) : iframeStarted ? (
                 <iframe
                   src={embedUrl}
                   allowFullScreen
                   allow="autoplay; fullscreen; encrypted-media"
                   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none', background: '#000' }}
                 />
+              ) : (
+                // cross-origin iframe-এর ভিতরের ক্লিক ধরা যায় না, তাই থাম্বনেইল+▶ বসিয়ে
+                // প্রথম ক্লিকটা এখানেই ধরা হচ্ছে — এতে MyBid-ও ক্লিকটা পায়, iframe-ও লোড হয়
+                <div className="iframe-click-gate" onClick={() => setIframeStarted(true)}>
+                  <img
+                    src={thumbUrl(video.thumbnail, 640)}
+                    alt={video.title}
+                    onError={e => { e.target.src = video.thumbnail; }}
+                  />
+                  <div className="play-btn-icon">▶</div>
+                </div>
               )}
               {showOverlay && (
                 <div className="video-overlay" onClick={handleOverlayClick}></div>
@@ -553,20 +516,6 @@ atOptions = {
           <div className="ad-banner-slot" id="ad-banner-bottom-2"></div>
         </div>
 
-      </div>
-
-      {/* ── ফ্লোটিং/স্লাইড-আপ ভিডিও অ্যাড প্লেয়ার (নিচ থেকে উঠে আসে) ── */}
-      <div className={`floating-ad-player${showAdPlayer ? ' show' : ''}`}>
-        <div className="floating-ad-header">
-          <span>বিজ্ঞাপন</span>
-          {showAdCloseBtn && (
-            <button className="floating-ad-close" onClick={handleAdCloseClick}>✕</button>
-          )}
-        </div>
-        {/* MyBid এর স্ক্রিপ্ট এই id-টাকেই টার্গেট করে নিজে থেকে ভিডিও অ্যাড বসাবে */}
-        <div id="mybid-video-overlay-slot" key={adKey}>
-          <video id="mybid-ad-video" playsInline muted></video>
-        </div>
       </div>
     </>
   );
