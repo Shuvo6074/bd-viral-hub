@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Head from "next/head";
 
 const SHEET_ID = '1nHoGwVeoKe7p64ko6nkwWVY-svuonzBH936pbdv1t5A';
 const PER_PAGE = 30;
-
-// Smartlink URL — প্রথম ক্লিকে নতুন ট্যাবে ওপেন হবে
-const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -113,8 +110,6 @@ export default function Home({ initialVideos }) {
   const [error, setError]           = useState('');
   const [views, setViews]           = useState({});
 
-  const firstClickRef = useRef(false);
-
   useEffect(() => {
     // ── ভিউ কাউন্ট: [slug].js পেজের মতোই একই Response Sheet থেকে
     // সব ভিডিওর ভিউ (slug অনুযায়ী গোনা) নিয়ে আসা হচ্ছে, যাতে হোমপেজের
@@ -133,30 +128,15 @@ export default function Home({ initialVideos }) {
       .catch(() => {});
   }, []);
 
-  // ── প্রথম ক্লিকে Smartlink নতুন ট্যাবে ওপেন হবে, পেজের স্বাভাবিক ক্লিক
-  // (যেমন ভিডিওতে ঢোকা) ব্লক হবে না — এরপর যতবার ক্লিক করা হোক না কেন,
-  // আর কোনো স্মার্টলিংক ওপেন হবে না। পেজ রিলোড হলে এই ref আবার রিসেট
-  // হয়ে যাবে, তাই আবার প্রথম ক্লিকে স্মার্টলিংক ওপেন হবে। ──
-  // ── Smartlink (প্রথম ক্লিকে নতুন ট্যাবে ওপেন) আপাতত বন্ধ রাখা হলো,
-  // যাতে TwinRed ইন্টারস্টিশিয়ালের সাথে কনফ্লিক্ট না করে। ভবিষ্যতে আবার
-  // চালু করতে চাইলে নিচের useEffect-টা আনকমেন্ট করে দিলেই হবে। ──
-  // useEffect(() => {
-  //   function handleFirstClick(e) {
-  //     if (e.target && e.target.id === 'ad-trigger') return;
-  //     if (firstClickRef.current) return;
-  //     firstClickRef.current = true;
-  //     window.open(SMARTLINK_URL, '_blank');
-  //     document.removeEventListener('click', handleFirstClick, true);
-  //   }
-  //   document.addEventListener('click', handleFirstClick, true);
-  //   return () => document.removeEventListener('click', handleFirstClick, true);
-  // }, []);
-
-  // ── TwinRed ইন্টারস্টিশিয়াল এখন থাম্বনেইল (.video-card) ক্লিকে সরাসরি
-  // ফায়ার হয় — এটা TwinRed dashboard-এর Trigger element সেটিংসে কনফিগার
-  // করা আছে, তাই এখানে আলাদা কোনো JS টাইমার/fake-click লজিকের দরকার নেই।
-  // (আগের টাইমার-বেসড পদ্ধতি ব্রাউজারের isTrusted সুরক্ষার কারণে কাজ
-  // করছিল না, তাই বাদ দেওয়া হলো।) ──
+  // ── পপআন্ডার এড ইনজেক্ট (আগে এখানে স্মার্টলিংক ছিল, সরিয়ে এইটা বসানো হলো) ──
+  useEffect(() => {
+    if (document.getElementById('popunder-script-e11add4186ad924a2c35518025bbb7c2')) return;
+    const script = document.createElement('script');
+    script.id = 'popunder-script-e11add4186ad924a2c35518025bbb7c2';
+    script.src = 'https://pl29731380.effectivecpmnetwork.com/e1/1a/dd/e11add4186ad924a2c35518025bbb7c2.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
 
   // ── highperformanceformat.com banner ads inject ──
   useEffect(() => {
@@ -483,12 +463,6 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         </div>
       </footer>
 
-      {/* ── TwinRed Interstitial: ad script (থাম্বনেইল/.video-card ক্লিকে
-           dashboard-এর Trigger element সেটিংস অনুযায়ী নিজে থেকেই ফায়ার হবে) ── */}
-      <ins data-tr-zone="01KWY3RG4PQHPRN8FJ9BRXY118">
-        <script type="text/javascript" async src="https://s.ad.twinrdengine.com/adlib.js"></script>
-      </ins>
-
     </>
   );
-      }
+    }
