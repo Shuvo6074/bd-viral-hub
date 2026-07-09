@@ -135,12 +135,7 @@ export default function VideoPage({ video, related }) {
   const [liked, setLiked] = useState(false);
   const [showOverlay, setShowOverlay] = useState(true);
 
-  // ── MyBid Video Overlay: main video-container-এর সাথেই সরাসরি জড়ানো,
-  // আলাদা কোনো ফ্লোটিং প্লেয়ার/টাইমার-সাইকেল আর দরকার নেই ──
   const [iframeStarted, setIframeStarted] = useState(false); // Google Drive/archive.org embed-এর ক্ষেত্রে থাম্বনেইলে ক্লিক করার আগ পর্যন্ত iframe লোড হবে না
-
-  const AD_SCRIPT_SRC = 'https://js.mbidadm.com/static/scripts.js';
-  const AD_SCRIPT_PID = '447473';
 
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
 
@@ -239,16 +234,6 @@ atOptions = {
       container.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
     });
   }, [video.id]);
-
-  // ── MyBid এর ডেলিভারি স্ক্রিপ্ট একবার পেজে লোড করা (দুইবার যোগ হওয়া আটকানো) ──
-  useEffect(() => {
-    if (document.querySelector(`script[data-admpid="${AD_SCRIPT_PID}"]`)) return;
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = AD_SCRIPT_SRC;
-    s.setAttribute('data-admpid', AD_SCRIPT_PID);
-    document.body.appendChild(s);
-  }, []);
 
   function toggleLike() {
     const newLikes = { ...likes };
@@ -383,9 +368,7 @@ atOptions = {
 
         <div className="player-layout">
           <div className="player-main">
-            {/* MyBid এর স্ক্রিপ্ট এই id-টাকেই টার্গেট করে, ইউজার প্লে করতে ক্লিক করা মাত্রই
-                ওভারলে অ্যাড নিজে থেকে বসিয়ে দেবে (Playback: Start ফরম্যাট) */}
-            <div className="video-container" id="mybid-video-overlay-slot">
+            <div className="video-container">
               {isDirectVideo ? (
                 <video controls autoPlay playsInline preload="metadata" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}>
                   <source src={video.videoUrl} type="video/mp4" />
@@ -399,7 +382,7 @@ atOptions = {
                 />
               ) : (
                 // cross-origin iframe-এর ভিতরের ক্লিক ধরা যায় না, তাই থাম্বনেইল+▶ বসিয়ে
-                // প্রথম ক্লিকটা এখানেই ধরা হচ্ছে — এতে MyBid-ও ক্লিকটা পায়, iframe-ও লোড হয়
+                // প্রথম ক্লিকটা এখানেই ধরা হচ্ছে — এতে iframe লোড হয়
                 <div className="iframe-click-gate" onClick={() => setIframeStarted(true)}>
                   <img
                     src={thumbUrl(video.thumbnail, 640)}
