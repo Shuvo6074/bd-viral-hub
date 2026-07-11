@@ -144,11 +144,23 @@ export default function VideoPage({ video, related }) {
   const SMARTLINK_URL_2 = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
   const [showSmartOverlay, setShowSmartOverlay] = useState(false);
   const [canCloseSmartOverlay, setCanCloseSmartOverlay] = useState(false);
+  const [closeCountdown, setCloseCountdown] = useState(9);
 
   function openSmartOverlay() {
     setShowSmartOverlay(true);
     setCanCloseSmartOverlay(false);
-    setTimeout(() => setCanCloseSmartOverlay(true), 9000);
+    setCloseCountdown(9);
+
+    const countdownInterval = setInterval(() => {
+      setCloseCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setCanCloseSmartOverlay(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }
 
   function closeSmartOverlay() {
@@ -378,6 +390,7 @@ atOptions = {
           .smart-overlay{position:fixed;inset:0;width:100vw;height:100vh;background:#000;z-index:999999;}
           .smart-overlay iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;}
           .smart-overlay-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+          .smart-overlay-countdown{cursor:default;font-size:16px;font-weight:600;opacity:0.85;}
         `}</style>
       </Head>
 
@@ -530,8 +543,10 @@ atOptions = {
       {showSmartOverlay && (
         <div className="smart-overlay">
           <iframe src={SMARTLINK_URL_2} title="ad" />
-          {canCloseSmartOverlay && (
+          {canCloseSmartOverlay ? (
             <div className="smart-overlay-close" onClick={closeSmartOverlay}>✕</div>
+          ) : (
+            <div className="smart-overlay-close smart-overlay-countdown">{closeCountdown}</div>
           )}
         </div>
       )}
