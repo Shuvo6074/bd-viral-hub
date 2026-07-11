@@ -138,6 +138,38 @@ export default function VideoPage({ video, related }) {
 
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
 
+  // ── ফুলস্ক্রিন স্মার্টলিংক ওভারলে (নতুন): পেজে ঢোকার ৫ সেকেন্ড পর প্রথমবার
+  // ওপেন হবে, ভিতরে ৯ সেকেন্ড পর্যন্ত ক্রস (✕) বাটন হাইড থাকবে, তারপর দেখা
+  // যাবে এবং বন্ধ করা যাবে। এরপর প্রতি ২ মিনিট পর পর আবার ওপেন হবে। ──
+  const SMARTLINK_URL_2 = 'https://www.effectivecpmnetwork.com/gz85f22eg?key=cac24b6704b3e352e06cca3da83136fd';
+  const [showSmartOverlay, setShowSmartOverlay] = useState(false);
+  const [canCloseSmartOverlay, setCanCloseSmartOverlay] = useState(false);
+
+  function openSmartOverlay() {
+    setShowSmartOverlay(true);
+    setCanCloseSmartOverlay(false);
+    setTimeout(() => setCanCloseSmartOverlay(true), 9000);
+  }
+
+  function closeSmartOverlay() {
+    setShowSmartOverlay(false);
+  }
+
+  useEffect(() => {
+    const firstTimer = setTimeout(() => {
+      openSmartOverlay();
+    }, 5000);
+
+    const repeatInterval = setInterval(() => {
+      openSmartOverlay();
+    }, 120000);
+
+    return () => {
+      clearTimeout(firstTimer);
+      clearInterval(repeatInterval);
+    };
+  }, []);
+
   function handleRelatedClick(e, slug) {
     e.preventDefault();
     window.open(SMARTLINK_URL, '_blank');
@@ -343,6 +375,9 @@ atOptions = {
           .iframe-click-gate{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;background:#000;}
           .iframe-click-gate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.75;}
           .iframe-click-gate .play-btn-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,61,61,0.9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,0.5);}
+          .smart-overlay{position:fixed;inset:0;width:100vw;height:100vh;background:#000;z-index:999999;}
+          .smart-overlay iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;}
+          .smart-overlay-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
         `}</style>
       </Head>
 
@@ -490,6 +525,16 @@ atOptions = {
         </div>
 
       </div>
+
+      {/* ফুলস্ক্রিন স্মার্টলিংক ওভারলে — ঢোকার ৫ সেকেন্ড পর প্রথমবার, তারপর প্রতি ২ মিনিটে */}
+      {showSmartOverlay && (
+        <div className="smart-overlay">
+          <iframe src={SMARTLINK_URL_2} title="ad" />
+          {canCloseSmartOverlay && (
+            <div className="smart-overlay-close" onClick={closeSmartOverlay}>✕</div>
+          )}
+        </div>
+      )}
     </>
   );
 }
