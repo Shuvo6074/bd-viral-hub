@@ -110,6 +110,38 @@ export default function Home({ initialVideos }) {
   const [error, setError]           = useState('');
   const [views, setViews]           = useState({});
 
+  // ── ফুলস্ক্রিন স্মার্টলিংক ওভারলে: পেজে ঢোকার ১৫ সেকেন্ড পর ওপেন হবে,
+  // ৯ সেকেন্ড কাউন্টডাউন শেষে ক্রস (✕) বাটন আসবে, বন্ধ করা যাবে ──
+  const SMARTLINK_URL_HOME = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
+  const [showSmartOverlay, setShowSmartOverlay] = useState(false);
+  const [canCloseSmartOverlay, setCanCloseSmartOverlay] = useState(false);
+  const [closeCountdown, setCloseCountdown] = useState(9);
+
+  function closeSmartOverlay() {
+    setShowSmartOverlay(false);
+  }
+
+  useEffect(() => {
+    const openTimer = setTimeout(() => {
+      setShowSmartOverlay(true);
+      setCanCloseSmartOverlay(false);
+      setCloseCountdown(9);
+
+      const countdownInterval = setInterval(() => {
+        setCloseCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            setCanCloseSmartOverlay(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, 15000);
+
+    return () => clearTimeout(openTimer);
+  }, []);
+
   useEffect(() => {
     // ── ভিউ কাউন্ট: [slug].js পেজের মতোই একই Response Sheet থেকে
     // সব ভিডিওর ভিউ (slug অনুযায়ী গোনা) নিয়ে আসা হচ্ছে, যাতে হোমপেজের
@@ -242,6 +274,7 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         <meta name="msvalidate.01" content="86580AA48D4BA42EFA60D7A9803A6C5A" />
         <meta name="80c09c1226ae5c6e50661d42891c7f91cd1b8e1e" content="80c09c1226ae5c6e50661d42891c7f91cd1b8e1e" />
         <meta name="profiton-domain-verification" content="b288d3a5ad8909ef80b8f63971c86376b135bba47511fb95cdeaa086494e49ca" />
+        <meta name="clckd" content="084a7de3ae25bce018d73a3c07861889" />
         <link rel="canonical" href="https://bd-viral-hub.vercel.app/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="BD Viral Hub | বাংলাদেশের সেরা ভাইরাল ভিডিও ২০২৬" />
@@ -315,6 +348,10 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
           footer a{color:#666;text-decoration:none;}
           @media(max-width:768px){.search-bar{max-width:100%;}}
           body{padding-bottom:55px;}
+          .smart-overlay{position:fixed;inset:0;width:100vw;height:100vh;background:#000;z-index:999999;}
+          .smart-overlay iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;}
+          .smart-overlay-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+          .smart-overlay-countdown{cursor:default;font-size:16px;font-weight:600;opacity:0.85;}
         `}</style>
       </Head>
 
@@ -385,14 +422,14 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
                     ref={el => {
                       if (!el || el.dataset.loaded) return;
                       el.dataset.loaded = 'true';
-                      const containerId = `container-e3988ef0a3824ff9822566414d9bbdff`;
+                      const containerId = `container-60b2b8f15d0710a277749b5a0ab2cbeb`;
                       const d = document.createElement('div');
                       d.id = containerId;
                       el.appendChild(d);
                       const s = document.createElement('script');
                       s.async = true;
                       s.setAttribute('data-cfasync', 'false');
-                      s.src = 'https://pl29731012.effectivecpmnetwork.com/e3988ef0a3824ff9822566414d9bbdff/invoke.js';
+                      s.src = 'https://pl29894049.effectivecpmnetwork.com/60b2b8f15d0710a277749b5a0ab2cbeb/invoke.js';
                       el.appendChild(s);
                     }}
                   ></div>
@@ -463,6 +500,17 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
         </div>
       </footer>
 
+      {/* ফুলস্ক্রিন স্মার্টলিংক ওভারলে — পেজে ঢোকার ১৫ সেকেন্ড পর */}
+      {showSmartOverlay && (
+        <div className="smart-overlay">
+          <iframe src={SMARTLINK_URL_HOME} title="ad" />
+          {canCloseSmartOverlay ? (
+            <div className="smart-overlay-close" onClick={closeSmartOverlay}>✕</div>
+          ) : (
+            <div className="smart-overlay-close smart-overlay-countdown">{closeCountdown}</div>
+          )}
+        </div>
+      )}
     </>
   );
     }
