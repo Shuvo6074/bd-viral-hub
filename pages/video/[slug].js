@@ -133,16 +133,10 @@ export default function VideoPage({ video, related }) {
   const [likes, setLikes] = useState({});
   const [views, setViews] = useState({});
   const [liked, setLiked] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(true);
 
   const [iframeStarted, setIframeStarted] = useState(false); // Google Drive/archive.org embed-এর ক্ষেত্রে থাম্বনেইলে ক্লিক করার আগ পর্যন্ত iframe লোড হবে না
 
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
-
-  function handleOverlayClick() {
-    window.open(SMARTLINK_URL, '_blank');
-    setShowOverlay(false);
-  }
 
   function handleRelatedClick(e, slug) {
     e.preventDefault();
@@ -317,7 +311,6 @@ atOptions = {
           @media(max-width:768px){.player-layout{grid-template-columns:1fr;}.related-sidebar{display:none !important;}.related-mobile{display:block !important;}}
           .video-container{position:relative;padding-top:56.25%;background:#000;border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;}
           .video-container video,.video-container iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
-          .video-overlay{position:absolute;inset:0;width:100%;height:100%;background:transparent;cursor:pointer;z-index:10;}
           .video-title-big{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.5px;margin-bottom:0.75rem;line-height:1.2;}
           .video-stats-row{display:flex;gap:1.5rem;color:var(--muted);font-size:0.82rem;margin-bottom:1rem;flex-wrap:wrap;}
           .video-actions{display:flex;gap:0.6rem;flex-wrap:nowrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);overflow-x:auto;}
@@ -391,9 +384,6 @@ atOptions = {
                   />
                   <div className="play-btn-icon">▶</div>
                 </div>
-              )}
-              {showOverlay && (
-                <div className="video-overlay" onClick={handleOverlayClick}></div>
               )}
             </div>
 
