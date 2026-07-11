@@ -133,10 +133,16 @@ export default function VideoPage({ video, related }) {
   const [likes, setLikes] = useState({});
   const [views, setViews] = useState({});
   const [liked, setLiked] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(true);
 
   const [iframeStarted, setIframeStarted] = useState(false); // Google Drive/archive.org embed-এর ক্ষেত্রে থাম্বনেইলে ক্লিক করার আগ পর্যন্ত iframe লোড হবে না
 
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
+
+  function handleOverlayClick() {
+    window.open(SMARTLINK_URL, '_blank');
+    setShowOverlay(false);
+  }
 
   // ── ফুলস্ক্রিন স্মার্টলিংক ওভারলে (নতুন): পেজে ঢোকার ৫ সেকেন্ড পর প্রথমবার
   // ওপেন হবে, ভিতরে ৯ সেকেন্ড পর্যন্ত ক্রস (✕) বাটন হাইড থাকবে, তারপর দেখা
@@ -339,7 +345,6 @@ atOptions = {
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
-        <script src="https://pl29731011.effectivecpmnetwork.com/5c/5f/a8/5c5fa829d1b2adb187a491231ec4716f.js"></script>
         <style>{`
           :root{--bg:#0d0d0d;--surface:#181818;--surface2:#222;--accent:#ff3d3d;--text:#f5f5f5;--muted:#888;--border:#2a2a2a;--radius:10px;}
           *{margin:0;padding:0;box-sizing:border-box;}
@@ -387,6 +392,7 @@ atOptions = {
           .iframe-click-gate{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;background:#000;}
           .iframe-click-gate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.75;}
           .iframe-click-gate .play-btn-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,61,61,0.9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,0.5);}
+          .video-overlay{position:absolute;inset:0;width:100%;height:100%;background:transparent;cursor:pointer;z-index:10;}
           .smart-overlay{position:fixed;inset:0;width:100vw;height:100vh;background:#000;z-index:999999;}
           .smart-overlay iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;}
           .smart-overlay-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
@@ -432,6 +438,9 @@ atOptions = {
                   />
                   <div className="play-btn-icon">▶</div>
                 </div>
+              )}
+              {showOverlay && (
+                <div className="video-overlay" onClick={handleOverlayClick}></div>
               )}
             </div>
 
