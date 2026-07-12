@@ -156,8 +156,14 @@ export default function VideoPage({ video, related, sideVideos = [] }) {
   const [showSmartOverlay, setShowSmartOverlay] = useState(false);
   const [canCloseSmartOverlay, setCanCloseSmartOverlay] = useState(false);
   const [closeCountdown, setCloseCountdown] = useState(9);
+  const [overlayTop, setOverlayTop] = useState(0);
+  const videoContainerRef = useRef(null);
 
   function openSmartOverlay() {
+    // ভিডিও প্লেয়ারের ঠিক নিচ থেকে overlay শুরু হবে, উপরের ভিডিও প্লেয়ারটা খালি/দেখা যাবে
+    const rect = videoContainerRef.current ? videoContainerRef.current.getBoundingClientRect() : null;
+    setOverlayTop(rect ? Math.max(rect.bottom, 0) : 0);
+
     setShowSmartOverlay(true);
     setCanCloseSmartOverlay(false);
     setCloseCountdown(9);
@@ -181,7 +187,7 @@ export default function VideoPage({ video, related, sideVideos = [] }) {
   useEffect(() => {
     const firstTimer = setTimeout(() => {
       openSmartOverlay();
-    }, 5000);
+    }, 60000);
 
     const repeatInterval = setInterval(() => {
       openSmartOverlay();
@@ -412,7 +418,7 @@ atOptions = {
           .iframe-click-gate img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.75;}
           .iframe-click-gate .play-btn-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(255,61,61,0.9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,0.5);}
           .video-overlay{position:absolute;inset:0;width:100%;height:100%;background:transparent;cursor:pointer;z-index:10;}
-          .smart-overlay{position:fixed;inset:0;width:100vw;height:100vh;background:#000;z-index:999999;}
+          .smart-overlay{position:fixed;left:0;right:0;bottom:0;background:#000;z-index:999999;}
           .smart-overlay iframe{position:absolute;inset:0;width:100%;height:100%;border:none;background:#000;}
           .smart-overlay-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
           .smart-overlay-countdown{cursor:default;font-size:16px;font-weight:600;opacity:0.85;}
@@ -434,7 +440,7 @@ atOptions = {
 
         <div className="player-layout">
           <div className="player-main">
-            <div className="video-container">
+            <div className="video-container" ref={videoContainerRef}>
               {isDirectVideo ? (
                 <video controls autoPlay playsInline preload="metadata" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}>
                   <source src={video.videoUrl} type="video/mp4" />
@@ -594,7 +600,7 @@ atOptions = {
 
       {/* ফুলস্ক্রিন স্মার্টলিংক ওভারলে — ঢোকার ৫ সেকেন্ড পর প্রথমবার, তারপর প্রতি ২ মিনিটে */}
       {showSmartOverlay && (
-        <div className="smart-overlay">
+        <div className="smart-overlay" style={{top: overlayTop}}>
           <iframe src={SMARTLINK_URL_2} title="ad" />
           {canCloseSmartOverlay ? (
             <div className="smart-overlay-close" onClick={closeSmartOverlay}>✕</div>
