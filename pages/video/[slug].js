@@ -271,12 +271,32 @@ atOptions = {
       return iframe;
     }
 
-    ['ad-banner-bottom-1', 'ad-banner-bottom-2', 'ad-banner-mid'].forEach(id => {
+    ['ad-banner-mid'].forEach(id => {
       const container = document.getElementById(id);
       if (!container || container.dataset.loaded) return;
       container.dataset.loaded = 'true';
       container.appendChild(buildAdIframe('408f7fe8d5566eee24a05d83101d2638', 300, 250));
     });
+
+    // নতুন দুইটা ব্যানার এড - Related videos এর একটু নিচে
+    const newAd1 = document.getElementById('ad-banner-new-1');
+    if (newAd1 && !newAd1.dataset.loaded) {
+      newAd1.dataset.loaded = 'true';
+      newAd1.appendChild(buildAdIframe('dcb6dc6458f50bc40d2e11ea36f425a3', 468, 60));
+    }
+
+    const newAd2 = document.getElementById('ad-banner-new-2');
+    if (newAd2 && !newAd2.dataset.loaded) {
+      newAd2.dataset.loaded = 'true';
+      newAd2.appendChild(buildAdIframe('c36e0fbc3c9f195056abac6a21b4c0de', 160, 600));
+    }
+
+    // নতুন ব্যানার - পেজের একদম উপরে (320x50)
+    const topAd = document.getElementById('ad-banner-top');
+    if (topAd && !topAd.dataset.loaded) {
+      topAd.dataset.loaded = 'true';
+      topAd.appendChild(buildAdIframe('ec8179b27bb6ebb315c43a86134a805d', 320, 50));
+    }
   }, [video.id]);
 
   function toggleLike() {
@@ -399,6 +419,11 @@ atOptions = {
           .smart-overlay-countdown{cursor:default;font-size:16px;font-weight:600;opacity:0.85;}
         `}</style>
       </Head>
+
+      {/* নতুন ব্যানার এড - পেজের একদম উপরে, হেডারেরও উপরে (320x50) */}
+      <div style={{display:'flex',justifyContent:'center',background:'#111'}}>
+        <div className="ad-banner-slot" id="ad-banner-top" style={{margin:'0.5rem 0'}}></div>
+      </div>
 
       <header>
         <div className="header-inner">
@@ -536,14 +561,14 @@ atOptions = {
           </div>
         </div>
 
-        {/* 300x250 Banner Ad - below related videos */}
-        <div style={{display:'flex',justifyContent:'center',margin:'1rem 0'}}>
-          <div className="ad-banner-slot" id="ad-banner-bottom-1"></div>
+        {/* নতুন ব্যানার এড - Related videos এর আরেকটু নিচে (468x60) */}
+        <div style={{display:'flex',justifyContent:'center',margin:'2rem 0 1rem'}}>
+          <div className="ad-banner-slot" id="ad-banner-new-1"></div>
         </div>
 
-        {/* 300x250 Banner Ad - second one below related videos */}
+        {/* নতুন ব্যানার এড - দ্বিতীয়টা (160x600) */}
         <div style={{display:'flex',justifyContent:'center',margin:'1rem 0'}}>
-          <div className="ad-banner-slot" id="ad-banner-bottom-2"></div>
+          <div className="ad-banner-slot" id="ad-banner-new-2"></div>
         </div>
 
       </div>
