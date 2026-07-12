@@ -123,13 +123,18 @@ export async function getServerSideProps({ params, res: httpRes }) {
     batchRelated.forEach(v => usedIds.add(v.id));
     const related = [...relatedVideos, ...batchRelated].slice(0, 40);
 
-    return { props: { video, related } };
+    // যেসব ভিডিও এই মুহূর্তে related section-এ শো করছে না, তাদের থেকে কিছু
+    // ভিডিও bottom banner-এর পাশের খালি জায়গা ভরার জন্য বাছাই করা হচ্ছে
+    const relatedIdSet = new Set(related.map(v => v.id));
+    const sideVideos = allVideos.filter(v => v.id !== video.id && !relatedIdSet.has(v.id)).slice(0, 6);
+
+    return { props: { video, related, sideVideos } };
   } catch(e) {
     return { notFound: true };
   }
 }
 
-export default function VideoPage({ video, related }) {
+export default function VideoPage({ video, related, sideVideos = [] }) {
   const [likes, setLikes] = useState({});
   const [views, setViews] = useState({});
   const [liked, setLiked] = useState(false);
@@ -557,8 +562,8 @@ atOptions = {
 
         {/* ডান সাইডে 160x600 এড, বাম সাইডে খালি জায়গায় আরও ভিডিও */}
         <div style={{display:'flex',gap:'0.75rem',margin:'1rem 0',alignItems:'flex-start'}}>
-          <div style={{flex:1,minWidth:0,display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'6px'}}>
-            {related.slice(0, 6).map(v => (
+          <div style={{flex:1,minWidth:0,display:'grid',gridTemplateColumns:'1fr',gap:'6px'}}>
+            {sideVideos.map(v => (
               <a key={`sidefill-${v.id}`} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
                 <div className="related-thumb">
                   <img
