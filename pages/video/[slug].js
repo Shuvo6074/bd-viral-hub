@@ -231,6 +231,9 @@ export default function VideoPage({ video, related }) {
   function handleOverlayClick() {
     window.open(SMARTLINK_URL, '_blank');
     setShowOverlay(false);
+    setIframeStarted(true); // ── ফিক্স: আগে এই ক্লিকে শুধু স্মার্টলিংক ওপেন হতো, ভিডিও শুরু
+    // হতো না — ইউজারকে দ্বিতীয়বার ক্লিক করতে হতো। এখন একই ক্লিকে স্মার্টলিংক
+    // ওপেন হওয়ার পাশাপাশি ভিডিও/iframe-ও সাথে সাথে চলা শুরু করবে। ──
   }
 
   // ── ফুলস্ক্রিন স্মার্টলিংক ওভারলে (নতুন): পেজে ঢোকার ৫ সেকেন্ড পর প্রথমবার
