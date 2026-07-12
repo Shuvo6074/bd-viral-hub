@@ -53,59 +53,6 @@ function getUniqueSlugs(rows, slugifyFn) {
   });
 }
 
-// ── ExoClick In-Stream VAST অ্যাড: এই ফাংশনটা VAST XML fetch করে, Wrapper
-// হলে (max ৩ ধাপ পর্যন্ত) ভিতরের আসল VASTAdTagURI অনুসরণ করে, শেষে
-// MediaFile (mp4 ভিডিও URL), Impression/Tracking beacon URL, এবং
-// ClickThrough URL বের করে রিটার্ন করে। কোনো অ্যাড না পেলে null রিটার্ন
-// করে, তখন সরাসরি আসল ভিডিও দেখানো হবে (অ্যাড স্কিপ)। ──
-async function fetchVastAd(url, depth = 0) {
-  if (depth > 3) return null;
-  try {
-    const res = await fetch(url);
-    const text = await res.text();
-    const xml = new DOMParser().parseFromString(text, 'text/xml');
-
-    const wrapperUri = xml.querySelector('VASTAdTagURI');
-    if (wrapperUri && wrapperUri.textContent.trim()) {
-      return await fetchVastAd(wrapperUri.textContent.trim(), depth + 1);
-    }
-
-    const mediaFile = xml.querySelector('MediaFile');
-    if (!mediaFile) return null;
-    const mediaUrl = mediaFile.textContent.trim();
-    if (!mediaUrl) return null;
-
-    const impressions = Array.from(xml.querySelectorAll('Impression'))
-      .map(n => n.textContent.trim()).filter(Boolean);
-
-    const trackingEvents = {};
-    xml.querySelectorAll('Tracking').forEach(node => {
-      const event = node.getAttribute('event');
-      const trackUrl = node.textContent.trim();
-      if (!event || !trackUrl) return;
-      (trackingEvents[event] = trackingEvents[event] || []).push(trackUrl);
-    });
-
-    const clickThroughNode = xml.querySelector('ClickThrough');
-    const clickThrough = clickThroughNode ? clickThroughNode.textContent.trim() : null;
-    const clickTracking = Array.from(xml.querySelectorAll('ClickTracking'))
-      .map(n => n.textContent.trim()).filter(Boolean);
-
-    return { mediaUrl, impressions, trackingEvents, clickThrough, clickTracking };
-  } catch (e) {
-    return null;
-  }
-}
-
-// Impression/Tracking beacon ফায়ার করার জন্য — শুধু একটা 1x1 image রিকোয়েস্ট
-// পাঠানো হয়, রেসপন্স নিয়ে কিছু করার দরকার নেই
-function fireBeacon(u) {
-  try {
-    const img = new Image();
-    img.src = u;
-  } catch (e) {}
-}
-
 // ⚠️ ভিউ কাউন্ট এখন Google Form-এর মাধ্যমে জমা হয় (Apps Script লাগে না)
 const VIEW_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScWpnit1sXMbza8XgWmdVV065Y6oYFC9zWEu7i0tGBoQW0S8w/formResponse';
 const VIEW_FORM_ENTRY = 'entry.1785504240';
@@ -190,50 +137,15 @@ export default function VideoPage({ video, related }) {
 
   const [iframeStarted, setIframeStarted] = useState(false); // Google Drive/archive.org embed-এর ক্ষেত্রে থাম্বনেইলে ক্লিক করার আগ পর্যন্ত iframe লোড হবে না
 
-  // ── ExoClick In-Stream VAST অ্যাড (পেজ ওপেন হলে থাম্বনেইলের জায়গায়
-  // সবার আগে এই অ্যাডটা autoplay হবে, ৫ সেকেন্ড পর Skip বাটন আসবে —
-  // ExoClick zone-এ যেভাবে কনফিগার করা হয়েছে ঠিক সেভাবেই। অ্যাড শেষ
-  // হলে বা স্কিপ করলে নিচে আসল ভিডিও/থাম্বনেইল normal ভাবে দেখাবে। ──
-  const VAST_TAG_URL = 'https://s.magsrv.com/v1/vast.php?idz=5972832';
-  const AD_SKIP_SECONDS = 5; // ExoClick zone-এ যে সেকেন্ড সেট করা হয়েছে তার সাথে মিলিয়ে
-  const [adState, setAdState] = useState('loading'); // loading | playing | done
-  const [adData, setAdData] = useState(null);
-  const [skipVisible, setSkipVisible] = useState(false);
-  const [skipCountdown, setSkipCountdown] = useState(AD_SKIP_SECONDS);
-  const adQuartilesFired = useRef({ first: false, mid: false, third: false });
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchVastAd(VAST_TAG_URL).then(data => {
-      if (cancelled) return;
-      if (!data || !data.mediaUrl) { setAdState('done'); return; } // অ্যাড না থাকলে সরাসরি আসল ভিডিও
-      setAdData(data);
-      setAdState('playing');
-    });
-    return () => { cancelled = true; };
-  }, [video.id]);
-
-  useEffect(() => {
-    if (adState !== 'playing') return;
-    setSkipVisible(false);
-    setSkipCountdown(AD_SKIP_SECONDS);
-    const interval = setInterval(() => {
-      setSkipCountdown(prev => {
-        if (prev <= 1) { clearInterval(interval); setSkipVisible(true); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [adState]);
-
   const SMARTLINK_URL = 'https://www.effectivecpmnetwork.com/z5yped96?key=51bf89de175c32426c4db7dc8e8c51d9';
 
   function handleOverlayClick() {
     window.open(SMARTLINK_URL, '_blank');
     setShowOverlay(false);
     setIframeStarted(true); // ── ফিক্স: আগে এই ক্লিকে শুধু স্মার্টলিংক ওপেন হতো, ভিডিও শুরু
-    // হতো না — ইউজারকে দ্বিতীয়বার ক্লিক করতে হতো। এখন একই ক্লিকে স্মার্টলিংক
-    // ওপেন হওয়ার পাশাপাশি ভিডিও/iframe-ও সাথে সাথে চলা শুরু করবে। ──
+    // হতো না — ইউজারকে ফিরে এসে দ্বিতীয়বার থাম্বনেইলে ক্লিক করতে হতো। এখন
+    // একই ক্লিকে স্মার্টলিংক ওপেন হওয়ার পাশাপাশি ভিডিও/iframe-ও সাথে সাথে
+    // চলা শুরু করবে। ──
   }
 
   // ── ফুলস্ক্রিন স্মার্টলিংক ওভারলে (নতুন): পেজে ঢোকার ৫ সেকেন্ড পর প্রথমবার
@@ -452,15 +364,6 @@ atOptions = {
           @media(max-width:768px){.player-layout{grid-template-columns:1fr;}.related-sidebar{display:none !important;}.related-mobile{display:block !important;}}
           .video-container{position:relative;padding-top:56.25%;background:#000;border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;}
           .video-container video,.video-container iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
-          .vast-ad-wrap{position:absolute;inset:0;width:100%;height:100%;background:#000;}
-          .vast-ad-loading{position:absolute;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
-          .vast-ad-loading img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.4;}
-          .vast-ad-spinner{position:relative;width:36px;height:36px;border:3px solid rgba(255,255,255,0.25);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
-          @keyframes spin{to{transform:rotate(360deg);}}
-          .vast-ad-label{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.7);color:#fff;font-size:0.7rem;font-weight:600;padding:3px 8px;border-radius:4px;letter-spacing:0.5px;z-index:2;}
-          .vast-skip-btn{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.5);color:#fff;font-size:0.8rem;font-weight:600;padding:0.4rem 0.9rem;border-radius:20px;cursor:pointer;z-index:2;font-family:inherit;}
-          .vast-skip-btn:hover{background:rgba(0,0,0,0.9);border-color:#fff;}
-          .vast-skip-countdown{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.78rem;font-weight:600;padding:0.4rem 0.9rem;border-radius:20px;z-index:2;opacity:0.9;}
           .video-title-big{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.5px;margin-bottom:0.75rem;line-height:1.2;}
           .video-stats-row{display:flex;gap:1.5rem;color:var(--muted);font-size:0.82rem;margin-bottom:1rem;flex-wrap:wrap;}
           .video-actions{display:flex;gap:0.6rem;flex-wrap:nowrap;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border);overflow-x:auto;}
@@ -517,56 +420,7 @@ atOptions = {
         <div className="player-layout">
           <div className="player-main">
             <div className="video-container">
-              {adState !== 'done' ? (
-                <div className="vast-ad-wrap">
-                  {adState === 'loading' && (
-                    <div className="vast-ad-loading">
-                      <img src={thumbUrl(video.thumbnail, 640)} alt={video.title} />
-                      <div className="vast-ad-spinner"></div>
-                    </div>
-                  )}
-                  {adState === 'playing' && adData && (
-                    <>
-                      <video
-                        autoPlay
-                        playsInline
-                        src={adData.mediaUrl}
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}
-                        onPlay={() => {
-                          adData.impressions.forEach(fireBeacon);
-                          (adData.trackingEvents.start || []).forEach(fireBeacon);
-                        }}
-                        onTimeUpdate={e => {
-                          const v = e.target;
-                          if (!v.duration) return;
-                          const pct = v.currentTime / v.duration;
-                          const q = adQuartilesFired.current;
-                          if (pct >= 0.25 && !q.first) { q.first = true; (adData.trackingEvents.firstQuartile || []).forEach(fireBeacon); }
-                          if (pct >= 0.5 && !q.mid) { q.mid = true; (adData.trackingEvents.midpoint || []).forEach(fireBeacon); }
-                          if (pct >= 0.75 && !q.third) { q.third = true; (adData.trackingEvents.thirdQuartile || []).forEach(fireBeacon); }
-                        }}
-                        onEnded={() => {
-                          (adData.trackingEvents.complete || []).forEach(fireBeacon);
-                          setAdState('done');
-                        }}
-                        onError={() => setAdState('done')}
-                        onClick={() => {
-                          if (adData.clickThrough) {
-                            window.open(adData.clickThrough, '_blank');
-                            adData.clickTracking.forEach(fireBeacon);
-                          }
-                        }}
-                      />
-                      <div className="vast-ad-label">Advertisement</div>
-                      {skipVisible ? (
-                        <button className="vast-skip-btn" onClick={() => setAdState('done')}>Skip Ad ▶</button>
-                      ) : (
-                        <div className="vast-skip-countdown">Ad ends in {skipCountdown}s</div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : isDirectVideo ? (
+              {isDirectVideo ? (
                 <video controls autoPlay playsInline preload="metadata" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', background: '#000', objectFit: 'contain' }}>
                   <source src={video.videoUrl} type="video/mp4" />
                 </video>
@@ -589,7 +443,7 @@ atOptions = {
                   <div className="play-btn-icon">▶</div>
                 </div>
               )}
-              {showOverlay && adState === 'done' && (
+              {showOverlay && (
                 <div className="video-overlay" onClick={handleOverlayClick}></div>
               )}
             </div>
