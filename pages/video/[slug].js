@@ -291,12 +291,6 @@ atOptions = {
       newAd2.appendChild(buildAdIframe('c36e0fbc3c9f195056abac6a21b4c0de', 160, 600));
     }
 
-    // নতুন ব্যানার - পেজের একদম উপরে (320x50)
-    const topAd = document.getElementById('ad-banner-top');
-    if (topAd && !topAd.dataset.loaded) {
-      topAd.dataset.loaded = 'true';
-      topAd.appendChild(buildAdIframe('ec8179b27bb6ebb315c43a86134a805d', 320, 50));
-    }
   }, [video.id]);
 
   function toggleLike() {
@@ -419,11 +413,6 @@ atOptions = {
           .smart-overlay-countdown{cursor:default;font-size:16px;font-weight:600;opacity:0.85;}
         `}</style>
       </Head>
-
-      {/* নতুন ব্যানার এড - পেজের একদম উপরে, হেডারেরও উপরে (320x50) */}
-      <div style={{display:'flex',justifyContent:'center',background:'#111'}}>
-        <div className="ad-banner-slot" id="ad-banner-top" style={{margin:'0.5rem 0'}}></div>
-      </div>
 
       <header>
         <div className="header-inner">
@@ -566,9 +555,34 @@ atOptions = {
           <div className="ad-banner-slot" id="ad-banner-new-1"></div>
         </div>
 
-        {/* নতুন ব্যানার এড - দ্বিতীয়টা (160x600) */}
-        <div style={{display:'flex',justifyContent:'center',margin:'1rem 0'}}>
-          <div className="ad-banner-slot" id="ad-banner-new-2"></div>
+        {/* ডান সাইডে 160x600 এড, বাম সাইডে খালি জায়গায় আরও ভিডিও */}
+        <div style={{display:'flex',gap:'0.75rem',margin:'1rem 0',alignItems:'flex-start'}}>
+          <div style={{flex:1,minWidth:0,display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'6px'}}>
+            {related.slice(0, 6).map(v => (
+              <a key={`sidefill-${v.id}`} className="related-card" href={`/video/${v.slug}`} onClick={e => handleRelatedClick(e, v.slug)}>
+                <div className="related-thumb">
+                  <img
+                    src={thumbUrl(v.thumbnail, 320)}
+                    alt={v.title}
+                    loading="lazy"
+                    onError={e => {
+                      if (e.target.dataset.fallback !== 'original' && v.thumbnail) {
+                        e.target.dataset.fallback = 'original';
+                        e.target.src = v.thumbnail;
+                      } else {
+                        e.target.src = `https://picsum.photos/seed/${v.id}/320/180`;
+                      }
+                    }}
+                  />
+                </div>
+                <div className="related-info">
+                  <div className="related-title-text">{v.title}</div>
+                  <div className="related-meta">👁 {formatNum(views[v.slug] || 0)}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+          <div className="ad-banner-slot" id="ad-banner-new-2" style={{flexShrink:0,margin:0}}></div>
         </div>
 
       </div>
