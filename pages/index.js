@@ -112,7 +112,7 @@ export default function Home({ initialVideos }) {
 
   // ── ফুলস্ক্রিন স্মার্টলিংক ওভারলে: পেজে ঢোকার ১৫ সেকেন্ড পর ওপেন হবে,
   // ৯ সেকেন্ড কাউন্টডাউন শেষে ক্রস (✕) বাটন আসবে, বন্ধ করা যাবে ──
-  const SMARTLINK_URL_HOME = 'https://www.effectivecpmnetwork.com/f13u5pz0?key=7d7c456419a40e94a175995fdf62708b';
+  const SMARTLINK_URL_HOME = 'https://www.effectivecpmnetwork.com/uaq4j6p6s0?key=efcef79acf92e1461afbfa49071f2669';
   const [showSmartOverlay, setShowSmartOverlay] = useState(false);
   const [canCloseSmartOverlay, setCanCloseSmartOverlay] = useState(false);
   const [closeCountdown, setCloseCountdown] = useState(9);
