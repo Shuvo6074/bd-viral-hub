@@ -222,7 +222,10 @@ export default function VideoPage({ video, related }) {
     // real সংখ্যা — localStorage-এর মতো নিজের ব্রাউজারে সীমাবদ্ধ না। ──
     try {
       const formData = new URLSearchParams();
-      formData.append(VIEW_FORM_ENTRY, video.slug);
+      // ── সাইট আইডেন্টিফায়ার প্রিফিক্স 'bd-' যোগ করা হলো, যাতে
+      // bd-viral-hub আর virallink2.site-এর ভিউ একই sheet-এ গিয়েও
+      // একে অপরের সাথে মিশে না যায় ──
+      formData.append(VIEW_FORM_ENTRY, `bd-${video.slug}`);
       fetch(VIEW_FORM_URL, {
         method: 'POST',
         mode: 'no-cors', // Google Form নিজে থেকেই এটা require করে, রেসপন্স পড়া যায় না কিন্তু submit ঠিকই হয়
@@ -239,8 +242,12 @@ export default function VideoPage({ video, related }) {
         const json = JSON.parse(text.substring(47, text.length - 2));
         const counts = {};
         json.table.rows.forEach(row => {
-          const s = row.c[1]?.v; // কলাম B = slug
-          if (s) counts[s] = (counts[s] || 0) + 1;
+          const s = row.c[1]?.v; // কলাম B = slug (prefix সহ, যেমন bd-xxxx)
+          // শুধু bd-viral-hub-এর নিজের এন্ট্রি গোনা হচ্ছে, prefix বাদ দিয়ে
+          if (s && s.startsWith('bd-')) {
+            const key = s.slice(3);
+            counts[key] = (counts[key] || 0) + 1;
+          }
         });
         setViews(counts);
       })
@@ -565,4 +572,4 @@ atOptions = {
       )}
     </>
   );
-}
+  }
