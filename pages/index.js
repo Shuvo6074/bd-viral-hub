@@ -152,8 +152,12 @@ export default function Home({ initialVideos }) {
         const json = JSON.parse(text.substring(47, text.length - 2));
         const counts = {};
         json.table.rows.forEach(row => {
-          const s = row.c[1]?.v; // কলাম B = slug
-          if (s) counts[s] = (counts[s] || 0) + 1;
+          const s = row.c[1]?.v; // কলাম B = slug (prefix সহ, যেমন bd-xxxx)
+          // শুধু bd-viral-hub-এর নিজের এন্ট্রি গোনা হচ্ছে, prefix বাদ দিয়ে
+          if (s && s.startsWith('bd-')) {
+            const key = s.slice(3);
+            counts[key] = (counts[key] || 0) + 1;
+          }
         });
         setViews(counts);
       })
@@ -514,4 +518,4 @@ atOptions = {'key':'${key}','format':'iframe','height':${height},'width':${width
       )}
     </>
   );
-    }
+                                 }
